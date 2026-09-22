@@ -425,14 +425,17 @@ function withAudioReady(cb){
   if(!audioCtx){ cb(); return; }
   var st = audioCtx.state;
   if(st === 'running'){ cb(); return; }
+  var done = false;
+  function fire(){ if(done) return; done = true; cb(); }
   try{
     var p = audioCtx.resume();
     if(p && typeof p.then === 'function'){
-      p.then(function(){ cb(); }).catch(function(){ cb(); });
+      p.then(fire).catch(fire);
     } else {
-      setTimeout(cb, 60);
+      setTimeout(fire, 60);
     }
-  }catch(e){ cb(); }
+  }catch(e){ fire(); return; }
+  setTimeout(fire, 120);
 }
 function splitIntoChunks(word){
   var result = [];
@@ -1506,7 +1509,6 @@ function cancelSpeech(){
   speakSession++;
   try{ window.speechSynthesis.cancel(); }catch(e){}
   stopSpeakRecognition();
-  setTimeout(function(){ ensureAudioRunning(); }, 80);
 }
 function speak(text){
   if(!save || save.muted || !speechReady || !text) return;
@@ -1541,6 +1543,9 @@ function speakOnce(text, onEnd, sessionId){
 }
 function speakWithDelay(text){
   if(!text) return;
+  if(audioCtx && audioCtx.state === 'running'){
+    try{ audioCtx.suspend(); }catch(e){}
+  }
   speakSession++;
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
