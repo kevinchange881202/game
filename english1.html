@@ -367,6 +367,7 @@ body.flash-white::before{content:'';position:fixed;inset:0;background:radial-gra
 .boss-shop-grid{grid-template-columns:repeat(4,1fr);gap:6px}
 .boss-shop-item .bi{font-size:26px}.boss-shop-item .bn{font-size:12px}.boss-shop-item .bp{font-size:11px}.boss-shop-item .bc{font-size:11px}
 }
+/* iPad / 大屏触控设备：降低背景画布分辨率与动画帧率，优化流畅度 */
 @media (hover: none) and (pointer: coarse){
   .planet-icon{animation-duration:3.6s}
   .planet-icon::before{animation-duration:2.8s}
@@ -478,6 +479,9 @@ var fxParticles = [];
 var lastShootT = 0, bgT = 0;
 var toastTimer = null;
 var bgFrameSkip = 0;
+var bgPaused = false;
+/* 通过 UA 探测 iPad / iOS 触控设备，做针对性性能优化 */
+var IS_IPAD = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var SFX_VOL_MULT = 2.0;
 var SPEAK_VOL_MULT = 1.5;
 var G = {
@@ -517,7 +521,8 @@ function showDamageNumber(x, y, amount, isHeal){
 function spawnCelebrateConfetti(duration, intensity){
   intensity = intensity || 1;
   var colors = ['#fbbf24','#f472b6','#a855f7','#60a5fa','#22c55e','#ef4444','#f59e0b','#ec4899','#f97316','#06b6d4','#84cc16'];
-  var total = Math.floor(intensity * 55);
+  /* iPad 上减少彩带数量，降低合成压力 */
+  var total = Math.floor(intensity * (IS_IPAD ? 35 : 55));
   var interval = intensity > 0.5 ? 55 : 100;
   for(var i=0;i<total;i++){
     (function(idx){
@@ -547,7 +552,7 @@ function celebrateHigh(){
     if(Date.now() - startT > 4200){ clearInterval(fwTimer); return; }
     var x = Math.random()*W; var y = Math.random()*H*0.55;
     var hue = Math.floor(Math.random()*360);
-    explode(x, y, 'hsl(' + hue + ',90%,65%)', 38);
+    explode(x, y, 'hsl(' + hue + ',90%,65%)', IS_IPAD ? 26 : 38);
     sfxFirework();
   }, 480);
 }
@@ -1372,22 +1377,31 @@ function prerenderNebulas(){
 }
 function initBgStars(){
   bgStars = [];
-  var n = Math.min(Math.floor(W*H/24000), 80);
+  /* iPad 上减少背景星星数量，降低绘制压力 */
+  var divisor = IS_IPAD ? 34000 : 24000;
+  var maxStars = IS_IPAD ? 55 : 80;
+  var n = Math.min(Math.floor(W*H/divisor), maxStars);
   for(var i=0;i<n;i++){ bgStars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.6+0.4,a:Math.random()*0.8+0.2,p:Math.random()*Math.PI*2,s:Math.random()*1.5+0.4,hue: Math.random()*80 + 220}); }
   bgNebulas = [];
-  for(var j=0;j<3;j++){ bgNebulas.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*Math.min(W,H)*0.5 + Math.min(W,H)*0.35,hue: Math.random()*160 + 220,speed: Math.random()*0.0006 + 0.0003,phase: Math.random()*Math.PI*2}); }
+  var nebCount = IS_IPAD ? 2 : 3;
+  for(var j=0;j<nebCount;j++){ bgNebulas.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*Math.min(W,H)*0.5 + Math.min(W,H)*0.35,hue: Math.random()*160 + 220,speed: Math.random()*0.0006 + 0.0003,phase: Math.random()*Math.PI*2}); }
   bgShoots = [];
   prerenderNebulas();
 }
 function resizeAll(){
-  DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+  /* iPad 上把设备像素比上限降到 1.25，显著降低背景画布像素量（视觉效果几乎无差异） */
+  var dprCap = IS_IPAD ? 1.25 : 1.5;
+  DPR = Math.min(window.devicePixelRatio || 1, dprCap);
   W = window.innerWidth; H = window.innerHeight;
   if(bgCanvas){ bgCanvas.width = W*DPR; bgCanvas.height = H*DPR; bgCanvas.style.width = W+'px'; bgCanvas.style.height = H+'px'; bgCtx = bgCanvas.getContext('2d'); if(bgCtx) bgCtx.setTransform(DPR,0,0,DPR,0,0); initBgStars(); }
   if(fxCanvas){ fxCanvas.width = W*DPR; fxCanvas.height = H*DPR; fxCanvas.style.width = W+'px'; fxCanvas.style.height = H+'px'; fxCtx = fxCanvas.getContext('2d'); if(fxCtx) fxCtx.setTransform(DPR,0,0,DPR,0,0); }
 }
 function bgLoop(){
   if(!bgCtx) return;
-  bgFrameSkip = (bgFrameSkip + 1) % 2;
+  if(bgPaused){ requestAnimationFrame(bgLoop); return; }
+  /* iPad 上把背景更新频率从每 2 帧降到每 3 帧（约 20fps），降低 CPU/GPU 占用 */
+  var skipMod = IS_IPAD ? 3 : 2;
+  bgFrameSkip = (bgFrameSkip + 1) % skipMod;
   if(bgFrameSkip !== 0){ requestAnimationFrame(bgLoop); return; }
   bgT += 1;
   var t = bgT;
@@ -1569,7 +1583,8 @@ function showFinalVictory(){
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
   var colors = ['#fbbf24','#f472b6','#a855f7','#60a5fa','#22c55e','#ef4444','#f59e0b','#ec4899'];
-  for(var i=0;i<60;i++){
+  var confettiCount = IS_IPAD ? 40 : 60;
+  for(var i=0;i<confettiCount;i++){
     (function(idx){
       setTimeout(function(){
         var c = document.createElement('div'); c.className = 'confetti';
@@ -1588,7 +1603,7 @@ function showFinalVictory(){
     if(Date.now() - startT > 6000){ clearInterval(fwTimer); return; }
     var x = Math.random()*W; var y = Math.random()*H*0.7;
     var hue = Math.floor(Math.random()*360);
-    explode(x, y, 'hsl(' + hue + ',90%,65%)', 40);
+    explode(x, y, 'hsl(' + hue + ',90%,65%)', IS_IPAD ? 28 : 40);
     sfxFirework();
   }, 600);
   sfxApplause(); sfxCheer();
@@ -2520,8 +2535,13 @@ function init(){
     document.addEventListener('touchstart', unlockAll, {passive:true});
     document.addEventListener('mousedown', unlockAll);
     document.addEventListener('click', unlockAll);
-    document.addEventListener('visibilitychange', function(){ if(document.hidden) persistNow(); });
-    window.addEventListener('pagehide', persistNow);
+    /* 页面隐藏时暂停背景绘制，回到前台自动恢复 */
+    document.addEventListener('visibilitychange', function(){ 
+      if(document.hidden){ bgPaused = true; persistNow(); }
+      else { bgPaused = false; }
+    });
+    window.addEventListener('pagehide', function(){ bgPaused = true; persistNow(); });
+    window.addEventListener('pageshow', function(){ bgPaused = false; });
     window.addEventListener('beforeunload', persistNow);
     bgLoop(); fxLoop();
     setInterval(persist, 8000);
