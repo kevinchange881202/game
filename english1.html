@@ -367,7 +367,6 @@ body.flash-white::before{content:'';position:fixed;inset:0;background:radial-gra
 .boss-shop-grid{grid-template-columns:repeat(4,1fr);gap:6px}
 .boss-shop-item .bi{font-size:26px}.boss-shop-item .bn{font-size:12px}.boss-shop-item .bp{font-size:11px}.boss-shop-item .bc{font-size:11px}
 }
-/* iPad / 大屏触控设备：降低背景画布分辨率与动画帧率，优化流畅度 */
 @media (hover: none) and (pointer: coarse){
   .planet-icon{animation-duration:3.6s}
   .planet-icon::before{animation-duration:2.8s}
@@ -484,6 +483,11 @@ var bgPaused = false;
 var IS_IPAD = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var SFX_VOL_MULT = 2.0;
 var SPEAK_VOL_MULT = 1.5;
+/* 跟读题录音对象全局引用，切题时统一停止 */
+var _speakRecStopFn = null;
+function stopSpeakRecognition(){
+  if(_speakRecStopFn){ try{ _speakRecStopFn(); }catch(e){} _speakRecStopFn = null; }
+}
 var G = {
   unit:null, levelIdx:0, qs:[], qIdx:0, correct:0, wrongCount:0,
   combo:0, maxCombo:0, earned:0, locked:false, isFinal:false,
@@ -521,7 +525,6 @@ function showDamageNumber(x, y, amount, isHeal){
 function spawnCelebrateConfetti(duration, intensity){
   intensity = intensity || 1;
   var colors = ['#fbbf24','#f472b6','#a855f7','#60a5fa','#22c55e','#ef4444','#f59e0b','#ec4899','#f97316','#06b6d4','#84cc16'];
-  /* iPad 上减少彩带数量，降低合成压力 */
   var total = Math.floor(intensity * (IS_IPAD ? 35 : 55));
   var interval = intensity > 0.5 ? 55 : 100;
   for(var i=0;i<total;i++){
@@ -1296,6 +1299,8 @@ var speakSession = 0;
 function cancelSpeech(){
   speakSession++;
   try{ window.speechSynthesis.cancel(); }catch(e){}
+  /* 同时停止跟读题的录音，避免遗留识别对象在后台触发 */
+  stopSpeakRecognition();
 }
 function speak(text){
   if(!save || save.muted || !speechReady || !text) return;
@@ -1377,7 +1382,6 @@ function prerenderNebulas(){
 }
 function initBgStars(){
   bgStars = [];
-  /* iPad 上减少背景星星数量，降低绘制压力 */
   var divisor = IS_IPAD ? 34000 : 24000;
   var maxStars = IS_IPAD ? 55 : 80;
   var n = Math.min(Math.floor(W*H/divisor), maxStars);
@@ -1389,7 +1393,6 @@ function initBgStars(){
   prerenderNebulas();
 }
 function resizeAll(){
-  /* iPad 上把设备像素比上限降到 1.25，显著降低背景画布像素量（视觉效果几乎无差异） */
   var dprCap = IS_IPAD ? 1.25 : 1.5;
   DPR = Math.min(window.devicePixelRatio || 1, dprCap);
   W = window.innerWidth; H = window.innerHeight;
@@ -1399,7 +1402,6 @@ function resizeAll(){
 function bgLoop(){
   if(!bgCtx) return;
   if(bgPaused){ requestAnimationFrame(bgLoop); return; }
-  /* iPad 上把背景更新频率从每 2 帧降到每 3 帧（约 20fps），降低 CPU/GPU 占用 */
   var skipMod = IS_IPAD ? 3 : 2;
   bgFrameSkip = (bgFrameSkip + 1) % skipMod;
   if(bgFrameSkip !== 0){ requestAnimationFrame(bgLoop); return; }
@@ -1629,7 +1631,6 @@ function getNextLevelForUnit(u){
   return 0;
 }
 function renderMap(){
-  /* 每次渲染地图时按解锁规则补充解锁 */
   checkAllUnlocksByAccuracy();
   safeText($('map-coins'), save.coins);
   var grid = $('planet-grid'); if(!grid) return;
@@ -2020,9 +2021,18 @@ function renderOrder(q, qb){
   }
   renderZone();
 }
+/* ===================================================================
+   跟读题：新逻辑
+   - 点麦克风 → 开始录音（15秒）→ 后台静默累积识别结果，不判断
+   - 15 秒内点"我读好了" → 立即停止录音 → 判断
+   - 15 秒到点未点"我读好了" → 自动停止，清空结果，等待重新点麦克风
+   - 麦克风不可用 → 点"我读好了"直接通过
+   - 达标 → 通过；识别为空 → 提示"没有听清"；不达标 → 提示"再读一遍"
+   - 任何情况下切题 → cancelSpeech() 会触发 stopSpeakRecognition() 强制停止
+=================================================================== */
 function renderSpeak(q, qb){
   addLabel('跟读', qb);
-  var status = document.createElement('div'); status.className = 'speak-status'; status.textContent = '自动朗读中…';
+  var status = document.createElement('div'); status.className = 'speak-status'; status.textContent = '点麦克风开始朗读';
   var sent = document.createElement('div'); sent.className = 'speak-sentence'; sent.textContent = q.sentence;
   var mic = document.createElement('button'); mic.className = 'speak-mic'; mic.textContent = '🎤';
   var tip = document.createElement('div'); tip.className = 'speak-tip'; tip.textContent = '';
@@ -2030,35 +2040,166 @@ function renderSpeak(q, qb){
   doneBtn.className = 'btn btn-primary'; doneBtn.style.marginTop = '18px'; doneBtn.textContent = '✓ 我读好了';
   qb.appendChild(status); qb.appendChild(sent); qb.appendChild(mic); qb.appendChild(tip); qb.appendChild(doneBtn);
   unlockSpeech(); speakWithDelay(q.sentence);
+
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
-  var hasSR = !!SR;
-  if(!hasSR){ tip.textContent = '⚠️ 当前浏览器不支持语音识别，可以点"我读好了"继续。'; mic.onclick = function(){ speak(q.sentence); }; doneBtn.onclick = function(){ correctFlow(); setTimeout(nextQuestion, 800); }; return; }
-  if(!isSecure){ tip.textContent = '⚠️ 语音识别需要 HTTPS 链接。'; mic.onclick = function(){ status.textContent = '本地文件无法使用麦克风，点"我读好了"继续'; }; doneBtn.onclick = function(){ correctFlow(); setTimeout(nextQuestion, 800); }; return; }
-  var rec = null;
-  mic.onclick = function(){
-    if(rec){ try{ rec.stop(); }catch(e){} rec = null; mic.classList.remove('recording'); status.textContent = '已停止'; return; }
-    try{
-      rec = new SR();
-      rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 3; rec.continuous = false;
-      mic.classList.add('recording'); status.textContent = '🎙️ 请大声朗读…';
-      rec.onresult = function(e){
-        mic.classList.remove('recording');
-        var said = ''; try{ said = e.results[0][0].transcript || ''; }catch(err){}
-        said = said.toLowerCase().replace(/[.,!?;:'"]/g,'').trim();
-        var target = q.sentence.toLowerCase().replace(/[.,!?;:'"]/g,'').trim();
-        var score = similarity(target, said);
-        status.textContent = '识别：' + (said || '(空)');
-        if(score >= 0.4){ correctFlow(); sparkle(W/2, H/2, '#22c55e', 20); setTimeout(nextQuestion, 1100); }
-        else { wrongFlow(q); status.textContent = '识别：' + (said || '(空)') + '（相似度 ' + Math.round(score*100) + '%）'; tip.textContent = '再试一次，慢慢读～'; }
-        rec = null;
-      };
-      rec.onerror = function(e){ mic.classList.remove('recording'); rec = null; status.textContent = '识别失败，或点"我读好了"继续'; };
-      rec.onend = function(){ mic.classList.remove('recording'); };
-      rec.start();
-    }catch(e){ status.textContent = '启动识别失败，点"我读好了"继续'; mic.classList.remove('recording'); rec = null; }
+  var micAvailable = !!SR && isSecure;
+  var micDenied = false;
+  var accumulatedText = '';
+  var currentRec = null;
+  var isRecording = false;
+  var countdownTimer = null;
+  var hasRecorded = false;
+  var finished = false;   // 已通过或正在跳题，避免重复触发
+
+  function clearCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; } }
+
+  function stopRecording(){
+    isRecording = false;
+    clearCountdown();
+    if(currentRec){
+      currentRec._stopped = true;
+      try{ currentRec.stop(); }catch(e){}
+      currentRec = null;
+    }
+  }
+
+  /* 注册全局清理函数——切题时会由 cancelSpeech() 自动调用 */
+  _speakRecStopFn = function(){
+    stopRecording();
+    accumulatedText = '';
+    hasRecorded = false;
+    finished = true;
   };
-  doneBtn.onclick = function(){ correctFlow(); setTimeout(nextQuestion, 800); };
+
+  function createAndStart(){
+    if(!isRecording) return;
+    try{
+      var rec = new SR();
+      rec.lang = 'en-US';
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+      rec.continuous = false;
+      currentRec = rec;
+
+      rec.onresult = function(e){
+        if(!isRecording || currentRec !== rec) return;
+        var text = '';
+        for(var i=0; i<e.results.length; i++){
+          text += e.results[i][0].transcript;
+        }
+        accumulatedText = text.trim();
+      };
+
+      rec.onerror = function(ev){
+        if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){
+          micDenied = true;
+          micAvailable = false;
+          stopRecording();
+          status.textContent = '⚠️ 无法使用麦克风，请直接点"我读好了"通过';
+          return;
+        }
+        /* 其他错误忽略，交给 onend 自动重连 */
+      };
+
+      rec.onend = function(){
+        if(!isRecording || currentRec !== rec) return;
+        /* 自动重连续听：用户还未点"我读好了"、15秒未到 → 重新启动一段 */
+        currentRec = null;
+        createAndStart();
+      };
+
+      rec.start();
+    }catch(e){
+      stopRecording();
+      status.textContent = '启动识别失败，请点"我读好了"重试';
+    }
+  }
+
+  function startRecording(){
+    if(!micAvailable) return;
+    stopRecording();
+    accumulatedText = '';
+    hasRecorded = true;
+    isRecording = true;
+    /* 先取消 TTS，避免录到朗读声 */
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+    status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
+    tip.textContent = '';
+
+    var timeLeft = 15;
+    clearCountdown();
+    countdownTimer = setInterval(function(){
+      timeLeft--;
+      if(timeLeft <= 0){
+        clearCountdown();
+        stopRecording();
+        accumulatedText = '';
+        hasRecorded = false;
+        status.textContent = '录音已结束，请重新点麦克风朗读';
+        tip.textContent = '';
+      }
+    }, 1000);
+
+    createAndStart();
+  }
+
+  mic.onclick = function(){
+    if(finished) return;
+    if(micDenied || !micAvailable){
+      status.textContent = '⚠️ 无法使用麦克风，请直接点"我读好了"通过';
+      return;
+    }
+    if(isRecording){
+      stopRecording();
+      status.textContent = '录音已停止，点麦克风可重新开始';
+      return;
+    }
+    startRecording();
+  };
+
+  doneBtn.onclick = function(){
+    if(finished) return;
+    /* 麦克风不可用 → 直接通过 */
+    if(!micAvailable){
+      finished = true;
+      stopRecording();
+      correctFlow();
+      setTimeout(nextQuestion, 1000);
+      return;
+    }
+    /* 麦克风可用 */
+    if(isRecording){
+      stopRecording();
+    }
+    if(!hasRecorded){
+      status.textContent = '请先点麦克风开始朗读';
+      tip.textContent = '';
+      return;
+    }
+    var said = (accumulatedText||'').toLowerCase().replace(/[.,!?;:'"]/g,'').trim();
+    var target = q.sentence.toLowerCase().replace(/[.,!?;:'"]/g,'').trim();
+    if(!said){
+      status.textContent = '⚠️ 没有听清，请再读一遍';
+      tip.textContent = '点麦克风重新朗读';
+      accumulatedText = '';
+      hasRecorded = false;
+      return;
+    }
+    var score = similarity(target, said);
+    if(score >= 0.4){
+      finished = true;
+      status.textContent = '✓ 读得不错！';
+      tip.textContent = '';
+      correctFlow();
+      setTimeout(nextQuestion, 1000);
+    } else {
+      status.textContent = '再读一遍～';
+      tip.textContent = '点麦克风重新朗读';
+      accumulatedText = '';
+      hasRecorded = false;
+    }
+  };
 }
 function similarity(a,b){ if(!a || !b) return 0; var longer = a.length > b.length ? a : b; var shorter = a.length > b.length ? b : a; if(longer.length === 0) return 1; return (longer.length - editDistance(longer, shorter)) / longer.length; }
 function editDistance(a,b){
@@ -2067,7 +2208,7 @@ function editDistance(a,b){
   for(var i2=1;i2<=b.length;i2++){ for(var j2=1;j2<=a.length;j2++){ d[i2][j2] = b.charAt(i2-1)===a.charAt(j2-1) ? d[i2-1][j2-1] : Math.min(d[i2-1][j2-1]+1, d[i2][j2-1]+1, d[i2-1][j2]+1); } }
   return d[b.length][a.length];
 }
-/* 答对流程：恢复绿色对勾反馈 */
+/* 答对流程：保留绿色对勾反馈 */
 function correctFlow(){ sfxCorrect(); showFeedback('ok'); G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.earned += (G.combo >= 3 ? 2 : 1); G.correct++; sfxCoin(); sparkle(W/2, H*0.4, '#fbbf24', 20); }
 function wrongFlow(q){ sfxWrong(); showFeedback('bad'); G.wrongCount++; G.combo = 0; updateCombo(); recordWrong(q); }
 function answerChoice(btn, idx, correct, explain){
@@ -2535,7 +2676,6 @@ function init(){
     document.addEventListener('touchstart', unlockAll, {passive:true});
     document.addEventListener('mousedown', unlockAll);
     document.addEventListener('click', unlockAll);
-    /* 页面隐藏时暂停背景绘制，回到前台自动恢复 */
     document.addEventListener('visibilitychange', function(){ 
       if(document.hidden){ bgPaused = true; persistNow(); }
       else { bgPaused = false; }
