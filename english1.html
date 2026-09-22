@@ -44,7 +44,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#08061a;color:#fff;f
 .map-title{font-size:clamp(30px,6.5vw,44px);font-weight:900;letter-spacing:5px;background:linear-gradient(135deg,#93c5fd,#c4b5fd,#f0abfc,#93c5fd);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 6s ease infinite}
 .map-coins{background:linear-gradient(135deg,rgba(251,191,36,.3),rgba(249,115,22,.3));border:2.5px solid rgba(251,191,36,.7);border-radius:24px;padding:16px 28px;font-size:30px;font-weight:900;white-space:nowrap;display:flex;align-items:center;gap:6px;color:#fbbf24;text-shadow:0 0 14px rgba(251,191,36,.9)}
 .planet-grid{display:flex;flex-direction:column;gap:20px;padding-bottom:30px}
-.planet-card{display:flex;flex-direction:row;align-items:center;gap:30px;background:linear-gradient(135deg,rgba(255,255,255,.1) 0%,rgba(255,255,255,.02) 50%,rgba(255,255,255,.07) 100%);border:3px solid rgba(255,255,255,.18);border-radius:36px;padding:32px 36px;text-align:left;cursor:pointer;transition:transform .25s;position:relative;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.45);min-height:230px}
+.planet-card{display:flex;flex-direction:row;align-items:center;gap:30px;background:linear-gradient(135deg,rgba(255,255,255,.1) 0%,rgba(255,255,255,.02) 50%,rgba(255,255,255,.07) 100%);border:3px solid rgba(255,255,255,.18);border-radius:36px;padding:32px 36px;text-align:left;cursor:pointer;transition:transform .25s;position:relative;overflow:visible;box-shadow:0 14px 40px rgba(0,0,0,.45);min-height:230px}
 .planet-card::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,transparent 100%);border-radius:36px 36px 0 0;pointer-events:none}
 .planet-card:active{transform:scale(.97)}
 .planet-card.locked{opacity:.55;filter:grayscale(.6);pointer-events:none}
@@ -57,11 +57,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#08061a;color:#fff;f
 @keyframes iconFloat{0%,100%{transform:translateY(0) scale(1) rotate(0)}50%{transform:translateY(-14px) scale(1.08) rotate(3deg)}}
 .planet-card.locked .planet-icon{background:linear-gradient(135deg,rgba(60,60,80,.75),rgba(30,30,50,.65));border-color:rgba(120,120,140,.45);box-shadow:0 8px 24px rgba(0,0,0,.6);animation:none}
 .planet-card.locked .planet-icon::before{background:radial-gradient(circle,rgba(120,120,140,.4),transparent 72%);animation:none}
-.planet-info{flex:1;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
+.planet-info{flex:1;display:flex;flex-direction:column;gap:10px;position:relative;z-index:5}
 .planet-name{font-size:48px;font-weight:900;letter-spacing:4px;text-shadow:0 3px 18px rgba(0,0,0,.7)}
 .planet-en{font-size:24px;color:rgba(180,200,255,.8);letter-spacing:3px;font-weight:700;text-transform:uppercase}
 
-.planet-stars{font-size:42px;margin-top:8px;display:inline-block;position:relative;line-height:1}
+/* ===== planet-stars：星星整体放大 1.2 倍 ===== */
+.planet-stars{font-size:75.6px;margin-top:8px;display:inline-block;position:relative;line-height:1}
 .planet-stars .star-bg{opacity:.22;display:inline-block;letter-spacing:8px}
 .planet-stars .star-top{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;display:inline-block;letter-spacing:8px}
 
@@ -195,11 +196,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#08061a;color:#fff;f
 
 .planet-progress{font-size:24px;color:rgba(190,215,255,.95);font-weight:800;letter-spacing:2px}
 .planet-accuracy{font-size:22px;color:rgba(180,220,255,.9);font-weight:800;letter-spacing:2px}
-.planet-badge{position:absolute;top:22px;right:26px;font-size:54px;z-index:2}
-.planet-boss-wrap{position:absolute;bottom:8px;right:8px;display:flex;align-items:center;gap:10px;z-index:3;cursor:pointer;pointer-events:auto}
-.planet-boss-wrap.locked{filter:grayscale(1);opacity:.45}
-.planet-boss-stars{font-size:36px;white-space:nowrap;line-height:1;display:inline-block;position:relative}
-.planet-boss{font-size:132px;opacity:.95;line-height:1;filter:drop-shadow(0 3px 14px rgba(239,68,68,.8));animation:bossPulse 2s ease-in-out infinite;will-change:transform}
+
+/* ===== 小BOSS容器（加大点击层级） ===== */
+.planet-boss-wrap{position:absolute;bottom:8px;right:8px;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:30;cursor:pointer;pointer-events:auto}
+/* 锁定状态：只对星星和BOSS图标灰化/透明，不影响左侧准确率文字颜色 */
+.planet-boss-wrap.locked .planet-boss,
+.planet-boss-wrap.locked .planet-boss-stars{filter:grayscale(1);opacity:.45}
+/* 小BOSS的3颗星：往上升一点点（-0.7em） */
+.planet-boss-stars{font-size:75.6px;white-space:nowrap;line-height:1;display:inline-block;position:relative;transform:translateY(-0.7em)}
+/* 小BOSS图标行（图标 + 左侧准确率文字） */
+.boss-icon-row{position:relative;display:flex;align-items:center;justify-content:center}
+/* 小BOSS准确率：与左侧进度/准确率同色浅蓝色 */
+.boss-accuracy{position:absolute;right:100%;margin-right:12px;top:60%;transform:translateY(-50%);font-size:22px;color:rgba(190,215,255,.95);font-weight:800;letter-spacing:2px;white-space:nowrap;line-height:1;pointer-events:none}
+/* ===== 小 boss 图标放大 1.5 倍 ===== */
+.planet-boss{font-size:198px;opacity:.95;line-height:1;filter:drop-shadow(0 3px 14px rgba(239,68,68,.8));animation:bossPulse 2s ease-in-out infinite;will-change:transform}
 @keyframes bossPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.16) rotate(-5deg)}}
 .quiz-top{display:flex;align-items:center;gap:16px}
 .progress-track{flex:1;height:26px;background:rgba(0,0,0,.55);border-radius:13px;overflow:hidden;border:2px solid rgba(255,255,255,.2)}
@@ -333,7 +343,7 @@ body.flash-white::before{content:'';position:fixed;inset:0;background:radial-gra
 .star-partial .star-fill{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;color:#fbbf24}
 @media (max-width:820px){
 .planet-icon{width:170px;height:170px;min-width:170px;font-size:120px}
-.planet-name{font-size:38px}.planet-en{font-size:20px}.planet-stars{font-size:22px}.planet-progress{font-size:20px}.planet-accuracy{font-size:18px}
+.planet-name{font-size:38px}.planet-en{font-size:20px}.planet-stars{font-size:39.6px}.planet-progress{font-size:20px}.planet-accuracy{font-size:18px}
 .planet-card{padding:26px 28px;min-height:190px;gap:24px}
 .opt{font-size:clamp(22px,4.5vw,30px);padding:26px 16px;min-height:92px}
 .boss-avatar{font-size:clamp(140px,30vw,220px)}.boss-name{font-size:36px}
@@ -348,15 +358,15 @@ body.flash-white::before{content:'';position:fixed;inset:0;background:radial-gra
 .boss-q{font-size:clamp(22px,4.8vw,32px)}
 .map-title{font-size:clamp(26px,6vw,38px)}.map-coins{font-size:26px;padding:14px 24px}
 .icon-btn{width:64px;height:64px;font-size:26px}
-.planet-boss-wrap{bottom:6px;right:6px;gap:6px}
-.planet-boss-stars{font-size:24px}
-.planet-boss{font-size:96px}
+.planet-boss-wrap{bottom:6px;right:6px;gap:2px}
+.planet-boss-stars{font-size:39.6px}
+.planet-boss{font-size:144px}
+.boss-accuracy{font-size:18px;margin-right:10px}
 .feedback{width:200px;height:200px;font-size:130px;border-width:10px}
 .feedback.hit{font-size:110px}
 .boss-shop-grid{grid-template-columns:repeat(4,1fr);gap:6px}
 .boss-shop-item .bi{font-size:26px}.boss-shop-item .bn{font-size:12px}.boss-shop-item .bp{font-size:11px}.boss-shop-item .bc{font-size:11px}
 }
-/* 触摸设备：进一步降低动画开销（视觉几乎不变） */
 @media (hover: none) and (pointer: coarse){
   .planet-icon{animation-duration:3.6s}
   .planet-icon::before{animation-duration:2.8s}
@@ -576,43 +586,27 @@ function unlockPlanet(id){
 function unlockNextPlanet(fromId){
   if(fromId + 1 <= UNIT_DATA.length) unlockPlanet(fromId + 1);
 }
+/* 解锁规则：上一个单元全部题目做完 且 综合准确率≥85% —— 两个条件同时满足才解锁 */
+function checkUnlockByAccuracy(u){
+  if(!u) return;
+  if(u.id >= UNIT_DATA.length) return;
+  var stats = getUnitStats(u);
+  if(stats.fullyCompleted && stats.accuracy >= 0.85){
+    unlockPlanet(u.id + 1);
+  }
+}
+function checkAllUnlocksByAccuracy(){
+  for(var i=0;i<UNIT_DATA.length;i++){
+    checkUnlockByAccuracy(UNIT_DATA[i]);
+  }
+  ensureUnlockedArray();
+}
 function migrateUnlockedPlanets(){
   if(!save) return;
   if(!save.unlockedPlanets || !(save.unlockedPlanets instanceof Array)) save.unlockedPlanets = [1];
   if(save.unlockedPlanets.indexOf(1) === -1) save.unlockedPlanets.unshift(1);
   if(save.currentPlanet && save.unlockedPlanets.indexOf(save.currentPlanet) === -1){
     save.unlockedPlanets.push(save.currentPlanet);
-  }
-  if(save.cleared && save.cleared.length){
-    for(var i=0;i<save.cleared.length;i++){
-      var s = '' + save.cleared[i];
-      var m = s.match(/^u(\d+)$/);
-      if(m){
-        var id = parseInt(m[1], 10);
-        if(save.unlockedPlanets.indexOf(id) === -1) save.unlockedPlanets.push(id);
-        if(id+1 <= UNIT_DATA.length && save.unlockedPlanets.indexOf(id+1) === -1) save.unlockedPlanets.push(id+1);
-      }
-    }
-  }
-  if(save.stars){
-    for(var pid in save.stars){
-      var mm = pid.match(/^u(\d+)$/);
-      if(mm){
-        var id2 = parseInt(mm[1], 10);
-        if(save.unlockedPlanets.indexOf(id2) === -1) save.unlockedPlanets.push(id2);
-        if(id2+1 <= UNIT_DATA.length && save.unlockedPlanets.indexOf(id2+1) === -1) save.unlockedPlanets.push(id2+1);
-      }
-    }
-  }
-  if(save.levelProgress){
-    for(var lk in save.levelProgress){
-      var lm = lk.match(/^u(\d+)_L/);
-      if(lm){
-        var id3 = parseInt(lm[1], 10);
-        if(save.unlockedPlanets.indexOf(id3) === -1) save.unlockedPlanets.push(id3);
-        if(id3+1 <= UNIT_DATA.length && save.unlockedPlanets.indexOf(id3+1) === -1) save.unlockedPlanets.push(id3+1);
-      }
-    }
   }
   if(!save.finalUnlocked){
     var allC = true;
@@ -621,6 +615,8 @@ function migrateUnlockedPlanets(){
     }
     save.finalUnlocked = allC;
   }
+  /* 按准确率补充解锁 */
+  checkAllUnlocksByAccuracy();
 }
 function checkAllClearedForFinal(){
   var allC = true;
@@ -1084,7 +1080,7 @@ var _lastPersist = 0;
 function persist(){
   if(!save) return;
   var now = Date.now();
-  if(now - _lastPersist < 200) return; /* 防抖，避免短时间频繁写 localStorage */
+  if(now - _lastPersist < 200) return;
   _lastPersist = now;
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){}
   writeMiniCookie();
@@ -1111,6 +1107,7 @@ function loadSave(){
       if(typeof save.currentLevel !== 'number') save.currentLevel = 0;
       if(!save.currentPlanet) save.currentPlanet = 1;
       migrateUnlockedPlanets();
+      persistNow();
       checkDaily(); return;
     }catch(e){}
   }
@@ -1127,7 +1124,7 @@ function loadSave(){
     d2.levelProgress = mini.lp || {};
     d2.unlockedPlanets = mini.up || [1];
     d2.finalUnlocked = !!mini.fu;
-    save = d2; migrateUnlockedPlanets(); checkDaily(); return;
+    save = d2; migrateUnlockedPlanets(); persistNow(); checkDaily(); return;
   }
   save = defaultSave(); migrateUnlockedPlanets(); checkDaily();
 }
@@ -1137,6 +1134,7 @@ function totalStars(){
   for(var k in save.stars){ for(var l in save.stars[k]) n += (save.stars[k][l] || 0); }
   return Math.round(n * 10) / 10;
 }
+/* ===== 单元统计：准确率按已完成题目计算；fullyCompleted 表示三关全部完成 ===== */
 function getUnitStats(u){
   var pid = 'u' + u.id;
   var st = save.stars[pid] || {};
@@ -1157,12 +1155,14 @@ function getUnitStats(u){
   var totalQ = 90;
   var accuracy = answered > 0 ? (correct / answered) : 0;
   var progress = totalQ > 0 ? (answered / totalQ) : 0;
+  var fullyCompleted = (st[0] !== undefined && st[1] !== undefined && st[2] !== undefined);
   return {
     answeredQuestions: answered,
     correctQuestions: correct,
     totalQuestions: totalQ,
     progress: progress,
-    accuracy: accuracy
+    accuracy: accuracy,
+    fullyCompleted: fullyCompleted
   };
 }
 function isBossUnlocked(u){
@@ -1485,6 +1485,12 @@ function showModal(title, desc, onOk, okText, cancelText, swapColors, onCancel){
   safeText($('modal-title'), title); safeText($('modal-desc'), desc);
   var okBtn = $('modal-ok'); var cancelBtn = $('modal-cancel');
   if(!okBtn || !cancelBtn) return;
+  okBtn.style.background = '';
+  okBtn.style.border = '';
+  okBtn.style.boxShadow = '';
+  cancelBtn.style.background = '';
+  cancelBtn.style.border = '';
+  cancelBtn.style.boxShadow = '';
   okBtn.textContent = okText || '确定'; cancelBtn.textContent = cancelText || '取消';
   cancelBtn.style.display = '';
   if(swapColors){
@@ -1608,18 +1614,19 @@ function getNextLevelForUnit(u){
   return 0;
 }
 function renderMap(){
+  /* 每次渲染地图时按解锁规则补充解锁 */
+  checkAllUnlocksByAccuracy();
   safeText($('map-coins'), save.coins);
   var grid = $('planet-grid'); if(!grid) return;
   grid.innerHTML = '';
   for(var ui=0; ui<UNIT_DATA.length; ui++){
     (function(u, uIdx){
-      var cleared = save.cleared.indexOf('u'+u.id) !== -1;
       var unlocked = isPlanetUnlocked(u.id);
       var isCurrent = save.currentPlanet === u.id && unlocked;
       var stats = getUnitStats(u);
       var isPerfect = unlocked && stats.accuracy >= 0.999;
       var card = document.createElement('div');
-      card.className = 'planet-card' + (unlocked?'':' locked') + (cleared?' done':'') + (isCurrent?' current':'') + (isPerfect?' perfect':'');
+      card.className = 'planet-card' + (unlocked?'':' locked') + (isCurrent?' current':'') + (isPerfect?' perfect':'');
       var progressPct = Math.round(stats.progress * 100);
       var accuracyPct = Math.round(stats.accuracy * 100);
       var progressText = unlocked ? ('进度 ' + progressPct + '%') : '未解锁';
@@ -1636,13 +1643,16 @@ function renderMap(){
       var bossUnlocked = isBossUnlocked(u);
       var bossWrapHTML = '';
       if(unlocked){
+        var bossAccuracy = Math.round(bossPct * 100);
         bossWrapHTML = '<div class="planet-boss-wrap' + (bossUnlocked?'':' locked') + '" data-uidx="'+uIdx+'">' +
           '<div class="planet-stars planet-boss-stars' + (isBossPerfect ? ' rainbow' : '') + '">' + renderStarRow(bossPct, 3) + '</div>' +
-          '<div class="planet-boss">' + u.boss.icon + '</div>' +
+          '<div class="boss-icon-row">' +
+            '<div class="boss-accuracy">准确率 ' + bossAccuracy + '%</div>' +
+            '<div class="planet-boss">' + u.boss.icon + '</div>' +
+          '</div>' +
           '</div>';
       }
       card.innerHTML =
-        (cleared?'<div class="planet-badge">✅</div>':'') +
         '<div class="planet-icon">' + iconContent + '</div>' +
         '<div class="planet-info">' +
           '<div class="planet-name">' + u.name + '</div>' +
@@ -1684,12 +1694,12 @@ function renderMap(){
             function(){
               showModal('确认重新开始？', '是否清除本单元所有测试记录？',
                 function(){
+                  restartUnit(uIdx);
+                },
+                '确认', '取消', false,
+                function(){
                   showScreen('s-map');
                   renderMap();
-                },
-                '取消', '确认', false,
-                function(){
-                  restartUnit(uIdx);
                 }
               );
             }
@@ -1699,20 +1709,27 @@ function renderMap(){
       grid.appendChild(card);
     })(UNIT_DATA[ui], ui);
   }
+  /* 给小BOSS容器绑定点击——点击它的任意位置都能弹出提示对话框 */
   var wraps = grid.querySelectorAll('.planet-boss-wrap');
   for(var wi=0; wi<wraps.length; wi++){
     (function(wrap){
       var uIdx = parseInt(wrap.getAttribute('data-uidx'), 10);
       var u = UNIT_DATA[uIdx];
-      wrap.onclick = function(e){
-        e.stopPropagation();
+      var handleBossClick = function(e){
+        if(e){ e.stopPropagation(); if(e.preventDefault) e.preventDefault(); }
         sfxClick();
-        if(isBossUnlocked(u)) startBoss(u, uIdx);
-        else {
+        if(isBossUnlocked(u)){
+          startBoss(u, uIdx);
+        } else {
           showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false,
             function(){ restartUnit(uIdx); });
         }
       };
+      wrap.onclick = handleBossClick;
+      var kids = wrap.querySelectorAll('*');
+      for(var ki=0; ki<kids.length; ki++){
+        kids[ki].onclick = handleBossClick;
+      }
     })(wraps[wi]);
   }
   var allCleared = true;
@@ -2035,6 +2052,7 @@ function editDistance(a,b){
   for(var i2=1;i2<=b.length;i2++){ for(var j2=1;j2<=a.length;j2++){ d[i2][j2] = b.charAt(i2-1)===a.charAt(j2-1) ? d[i2-1][j2-1] : Math.min(d[i2-1][j2-1]+1, d[i2][j2-1]+1, d[i2-1][j2]+1); } }
   return d[b.length][a.length];
 }
+/* 答对流程：恢复绿色对勾反馈 */
 function correctFlow(){ sfxCorrect(); showFeedback('ok'); G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.earned += (G.combo >= 3 ? 2 : 1); G.correct++; sfxCoin(); sparkle(W/2, H*0.4, '#fbbf24', 20); }
 function wrongFlow(q){ sfxWrong(); showFeedback('bad'); G.wrongCount++; G.combo = 0; updateCombo(); recordWrong(q); }
 function answerChoice(btn, idx, correct, explain){
@@ -2098,9 +2116,10 @@ function endLevel(){
     var planetCleared = false;
     if(allDone && save.cleared.indexOf(pid) === -1){ 
       save.cleared.push(pid); planetCleared = true;
-      unlockNextPlanet(unit.id);
       checkAllClearedForFinal();
     }
+    /* ==== 解锁下一单元：必须三关全部完成 且 准确率≥85% ==== */
+    checkUnlockByAccuracy(unit);
     if(stars === 3){ save.streak = (save.streak||0) + 1; if(save.streak >= 3 && save.badges.indexOf('streak3') === -1){ save.badges.push('streak3'); showToast('🏅 徽章：连续三星达人！', 3000); } } else save.streak = 0;
     save.maxStreak = Math.max(save.maxStreak||0, save.streak||0);
     persistNow();
@@ -2358,9 +2377,10 @@ function endBoss(win){
       if(save.stars['u'+unit.id] === undefined || save.stars['u'+unit.id]['boss'] === undefined) allDone = false;
       if(allDone && save.cleared.indexOf(pid) === -1){ 
         save.cleared.push(pid);
-        unlockNextPlanet(unit.id);
         checkAllClearedForFinal();
       }
+      /* ==== 解锁下一单元：必须三关全部完成 且 准确率≥85% ==== */
+      checkUnlockByAccuracy(unit);
     }
     persistNow();
     var starsEl = $('result-stars');
@@ -2426,14 +2446,25 @@ function bindEvents(){
   bind('btn-shop-back', function(){ sfxClick(); renderHome(); showScreen('s-home'); });
   bind('btn-reset', function(){
     sfxClick();
-    showModal('重置进度？','所有星星、金币、徽章都会清空，且无法恢复。', function(){
-      showModal('真的要重置吗？','这是最后确认，重置后无法撤销。', function(){
-        try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-        document.cookie = COOKIE_KEY + '=;max-age=0;path=/';
-        save = defaultSave(); checkDaily(); persistNow();
-        renderHome(); showToast('进度已重置');
-      }, '确认重置', '我再想想', true);
-    }, '重置', '取消', true);
+    showModal('重置进度？','所有星星、金币、徽章都会清空，且无法恢复。',
+      null,
+      '取消', '重置', true,
+      function(){
+        showModal('真的要重置吗？','这是最后确认，重置后无法撤销。', function(){
+          try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+          document.cookie = COOKIE_KEY + '=;max-age=0;path=/';
+          save = defaultSave(); checkDaily(); persistNow();
+          renderHome(); showToast('进度已重置');
+        }, '确认重置', '我再想想', true);
+        var okBtn = $('modal-ok');
+        if(okBtn){
+          okBtn.style.background = 'linear-gradient(135deg,#ef4444 0%,#dc2626 100%)';
+          okBtn.style.border = 'none';
+          okBtn.style.boxShadow = '0 16px 40px rgba(239,68,68,.55),inset 0 3px 0 rgba(255,255,255,.45)';
+          okBtn.style.color = '#fff';
+        }
+      }
+    );
   });
   bind('btn-quit', function(){
     sfxClick();
