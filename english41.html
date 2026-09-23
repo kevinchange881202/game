@@ -425,7 +425,7 @@ var SPEAK_VOL_MULT = 1.5;
 var _speakRecStopFn = null;
 var _ttsPlaying = false;
 var _ydToken = 0;
-var YD_TTS_TYPE = 1;
+var YD_TTS_TYPE = 2;
 var YD_TTS_URL = 'https://dict.youdao.com/dictvoice';
 
 function stopSpeakRecognition(){
@@ -1456,33 +1456,14 @@ function getEnglishVoice(){
   try{
     var voices = window.speechSynthesis.getVoices();
     if(!voices || voices.length === 0) return null;
-    var i, v, lang, name;
-    for(i=0;i<voices.length;i++){
-      v = voices[i];
-      if(!v.name) continue;
-      name = v.name.toLowerCase();
-      if(name.indexOf('stephanie') !== -1){ englishVoice = v; return v; }
+    var fallback = null;
+    for(var i=0;i<voices.length;i++){
+      var v = voices[i]; if(!v.lang) continue;
+      var lang = v.lang.toLowerCase();
+      if(lang.indexOf('en-us') === 0 || lang.indexOf('en_us') === 0){ englishVoice = v; return v; }
+      if(!fallback && lang.indexOf('en') === 0) fallback = v;
     }
-    for(i=0;i<voices.length;i++){
-      v = voices[i]; if(!v.lang) continue;
-      lang = v.lang.toLowerCase();
-      if(v.localService && lang.indexOf('en-gb') === 0){ englishVoice = v; return v; }
-    }
-    for(i=0;i<voices.length;i++){
-      v = voices[i]; if(!v.lang) continue;
-      lang = v.lang.toLowerCase();
-      if(v.localService && lang.indexOf('en') === 0){ englishVoice = v; return v; }
-    }
-    for(i=0;i<voices.length;i++){
-      v = voices[i]; if(!v.lang) continue;
-      lang = v.lang.toLowerCase();
-      if(lang.indexOf('en-gb') === 0){ englishVoice = v; return v; }
-    }
-    for(i=0;i<voices.length;i++){
-      v = voices[i]; if(!v.lang) continue;
-      lang = v.lang.toLowerCase();
-      if(lang.indexOf('en') === 0){ englishVoice = v; return v; }
-    }
+    if(fallback){ englishVoice = fallback; return fallback; }
   }catch(e){}
   return null;
 }
@@ -1490,7 +1471,7 @@ function unlockSpeech(){
   if(speechUnlocked || !speechReady) return;
   try{
     var u = new SpeechSynthesisUtterance(' ');
-    u.lang = 'en-GB'; u.volume = 0; u.rate = 1;
+    u.lang = 'en-US'; u.volume = 0; u.rate = 1;
     window.speechSynthesis.speak(u); speechUnlocked = true;
     setTimeout(function(){ try{ getEnglishVoice(); }catch(e){} }, 200);
   }catch(e){}
@@ -1516,7 +1497,7 @@ function speakTTS(text, onEnd){
     try{
       if(!englishVoice) getEnglishVoice();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-GB'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
+      u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
       var v = getEnglishVoice(); if(v) u.voice = v;
       var done = false;
       function fin(){ if(done) return; done = true; _ttsPlaying = false; if(onEnd){ try{ onEnd(); }catch(e){} } }
@@ -1673,9 +1654,8 @@ function bgLoop(){
     var nb = bgNebulas[ni];
     var px = nb.x + Math.sin(t*nb.speed + nb.phase)*80;
     var py = nb.y + Math.cos(t*nb.speed + nb.phase*1.3)*60;
-    if(nb.img){
-      bgCtx.drawImage(nb.img, px - nb.r, py - nb.r);
-    } else {
+    if(nb.img){ bgCtx.drawImage(nb.img, px - nb.r, py - nb.r); }
+    else {
       var ng = bgCtx.createRadialGradient(px,py,0,px,py,nb.r);
       ng.addColorStop(0,'hsla(' + nb.hue + ',85%,62%,0.18)');
       ng.addColorStop(0.5,'hsla(' + (nb.hue+40) + ',85%,52%,0.08)');
