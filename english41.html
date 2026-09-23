@@ -1480,6 +1480,32 @@ function unlockSpeech(){
     setTimeout(function(){ try{ getEnglishVoice(); }catch(e){} }, 200);
   }catch(e){}
 }
+/* ============ 新增：共享 Audio 元素 + 预授权 ============ */
+var _sharedAudio = null;
+var _sharedAudioReady = false;
+
+function primeSharedAudio(){
+  if(_sharedAudio) return;
+  try{
+    _sharedAudio = new Audio();
+    _sharedAudio.setAttribute('playsinline','');
+    _sharedAudio.preload = 'auto';
+    _sharedAudio.volume = 1.0;
+    _sharedAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
+    var p = _sharedAudio.play();
+    if(p && p.then){
+      p.then(function(){
+        try{ _sharedAudio.pause(); _sharedAudio.currentTime = 0; }catch(e){}
+        _sharedAudioReady = true;
+      }).catch(function(){
+        _sharedAudioReady = true;
+      });
+    } else {
+      _sharedAudioReady = true;
+    }
+  }catch(e){ _sharedAudio = null; }
+}
+
 var speakSession = 0;
 function cancelSpeech(){
   speakSession++;
@@ -1513,24 +1539,33 @@ function speakTTS(text, onEnd){
     }catch(e){ if(onEnd){ try{ onEnd(); }catch(e){} } }
   }, 60);
 }
-/* ============ 修改 ②：playYoudao 修好兜底逻辑 ============ */
+/* ============ 修改 ②：playYoudao 复用共享 Audio + 修好兜底逻辑 ============ */
 function playYoudao(text, onEnd, allowFallback){
   if(allowFallback === undefined) allowFallback = true;
   _ydToken++;
   var myToken = _ydToken;
-  var a = null;
-  try{
-    a = new Audio();
-    a.preload = 'auto';
-    a.setAttribute('playsinline','');
-    a.volume = 1.0;
-  }catch(e){ a = null; }
+  var a = _sharedAudio;
+  if(!a){
+    try{
+      a = new Audio();
+      a.preload = 'auto';
+      a.setAttribute('playsinline','');
+      a.volume = 1.0;
+    }catch(e){ a = null; }
+  }
   if(!a){
     if(allowFallback){ speakTTS(text, onEnd); }
     else if(onEnd){ try{ onEnd(); }catch(e){} }
     return;
   }
   try{ window.speechSynthesis.cancel(); }catch(e){}
+
+  if(a === _sharedAudio){
+    try{ a.pause(); }catch(e){}
+    try{ a.currentTime = 0; }catch(e){}
+    a.onended = null;
+    a.onerror = null;
+  }
 
   var finished = false;
   var wentTTS = false;
@@ -3046,8 +3081,8 @@ function renderShop(){
 }
 function bindEvents(){
   function bind(id, fn){ var el = $(id); if(el) el.onclick = fn; }
-  bind('btn-start', function(){ initAudio(); unlockSpeech(); sfxClick(); showScreen('s-map'); renderMap(); });
-  bind('btn-continue-game', function(){ initAudio(); unlockSpeech(); sfxClick(); resumeGame(); });
+  bind('btn-start', function(){ primeSharedAudio(); initAudio(); unlockSpeech(); sfxClick(); showScreen('s-map'); renderMap(); });
+  bind('btn-continue-game', function(){ primeSharedAudio(); initAudio(); unlockSpeech(); sfxClick(); resumeGame(); });
   bind('btn-home', function(){ sfxClick(); cancelSpeech(); renderHome(); showScreen('s-home'); });
   bind('btn-shop', function(){ sfxClick(); renderShop(); showScreen('s-shop'); });
   bind('btn-shop-back', function(){ sfxClick(); renderHome(); showScreen('s-home'); });
@@ -3136,6 +3171,9 @@ function init(){
     document.addEventListener('touchstart', keepAudioAlive, {passive:true});
     document.addEventListener('mousedown', keepAudioAlive);
     document.addEventListener('click', keepAudioAlive);
+    /* 新增：首次任意手势就预授权共享 Audio 元素 */
+    document.addEventListener('touchstart', function(){ primeSharedAudio(); }, {once:true, passive:true});
+    document.addEventListener('mousedown',  function(){ primeSharedAudio(); }, {once:true});
     document.addEventListener('visibilitychange', function(){
       if(document.hidden){ bgPaused = true; persistNow(); }
       else { bgPaused = false; ensureAudioRunning(); }
