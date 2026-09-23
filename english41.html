@@ -125,6 +125,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#08061a;color:#fff;f
 .speak-sentence{background:linear-gradient(160deg,rgba(96,165,250,.18),rgba(168,85,247,.1));border:2.5px solid rgba(96,165,250,.65);border-radius:28px;padding:36px 38px;font-size:clamp(28px,6vw,42px);font-weight:900;color:#e0f2fe;text-align:center;line-height:1.6;box-shadow:0 12px 40px rgba(96,165,250,.45);text-shadow:0 4px 18px rgba(0,0,0,.6)}
 .speak-mic{width:190px;height:190px;border-radius:50%;background:linear-gradient(135deg,#ef4444 0%,#f59e0b 100%);border:none;font-size:88px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0 auto;color:#fff;transition:transform .15s;position:relative;box-shadow:0 20px 60px rgba(239,68,68,.85),inset 0 6px 0 rgba(255,255,255,.55)}
 .speak-mic:active{transform:scale(.9)}
+.speak-speaker{width:190px;height:190px;border-radius:50%;background:linear-gradient(135deg,#4f8cff 0%,#a855f7 50%,#ec4899 100%);border:none;font-size:88px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0 auto;color:#fff;transition:transform .15s;position:relative;box-shadow:0 20px 60px rgba(96,165,250,.85),inset 0 6px 0 rgba(255,255,255,.55)}
+.speak-speaker:active{transform:scale(.9)}
+.speak-speaker.playing{animation:speakerPulse 1s ease-in-out infinite}
+@keyframes speakerPulse{0%,100%{transform:scale(1);box-shadow:0 20px 60px rgba(96,165,250,.85),inset 0 6px 0 rgba(255,255,255,.55)}50%{transform:scale(1.07);box-shadow:0 26px 75px rgba(96,165,250,1),inset 0 6px 0 rgba(255,255,255,.55)}}
+.speak-btn-row{display:flex;justify-content:space-between;align-items:flex-start;margin:24px auto 12px;padding:0 12px;width:100%;max-width:560px;flex-wrap:wrap;gap:24px}
+.speak-btn-col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.speak-btn-label{font-size:24px;font-weight:900;letter-spacing:3px;color:rgba(210,228,255,.98);text-shadow:0 3px 10px rgba(0,0,0,.65);padding:0 4px}
+.speak-btn-col.mic-col .speak-btn-label{color:#ffe1b5}
+.speak-btn-col.spk-col .speak-btn-label{color:#d6e6ff}
 .speak-status{text-align:center;font-size:23px;color:rgba(190,210,255,.95);min-height:38px;font-weight:800;padding:0 10px;line-height:1.5}
 .speak-tip{text-align:center;font-size:18px;color:rgba(160,180,230,.85);margin-top:10px;line-height:1.6;padding:0 14px}
 .boss-top{display:flex;align-items:center;gap:14px;position:relative;z-index:2}
@@ -263,7 +272,9 @@ body.shake{animation:shakeBig .55s cubic-bezier(.36,.07,.19,.97)}
 .boss-avatar{font-size:clamp(140px,30vw,220px)}.boss-name{font-size:36px}
 .boss-opt{font-size:clamp(20px,4vw,26px);padding:22px 16px;min-height:84px}
 .home-title{font-size:clamp(40px,9vw,72px)}.home-owner{font-size:clamp(20px,4.5vw,34px)}.home-sub{font-size:clamp(16px,3.4vw,22px)}
-.listen-btn{width:180px;height:180px;font-size:84px}.speak-mic{width:160px;height:160px;font-size:72px}
+.listen-btn{width:180px;height:180px;font-size:84px}.speak-mic{width:150px;height:150px;font-size:72px}.speak-speaker{width:150px;height:150px;font-size:72px}
+.speak-btn-row{padding:0 8px;gap:18px}
+.speak-btn-label{font-size:20px;letter-spacing:2px}
 .speak-sentence{font-size:clamp(24px,5vw,34px);padding:30px 30px}
 .btn-primary{font-size:28px;padding:24px 34px;min-height:80px}
 .btn-ghost{font-size:20px;padding:18px 26px;min-height:64px}
@@ -409,6 +420,7 @@ var bgFrameSkip = 0;
 var bgPaused = false;
 var IS_IPAD = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var SFX_VOL_MULT = 2.0;
+var SPEAK_VOL_MULT = 1.5;
 var _speakRecStopFn = null;
 var _ttsPlaying = false;
 
@@ -416,7 +428,7 @@ var _ttsPlaying = false;
    ★★★ 语音引擎：有道词典发音（无需 Key，直接可用）★★★
    YD_TTS_TYPE = 1 → 英式发音   2 → 美式发音
    ================================================================== */
-var YD_TTS_TYPE = 1;
+var YD_TTS_TYPE = 1;   /* ★ 已改为英式发音 */
 var YD_TTS_URL = 'https://dict.youdao.com/dictvoice';
 var SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 var speechReady = true;
@@ -437,23 +449,27 @@ function getYdAudio(){
   return _ydAudio;
 }
 
-/* 首次触摸时"解锁"音频元素（iOS 必须） */
+/* 用真正的播放音频元素做静音解锁 */
 function unlockSpeech(){
   if(speechUnlocked) return;
   speechUnlocked = true;
   try{
     var a = getYdAudio();
     if(!a) return;
+    a.volume = 0.001;
     a.src = SILENT_WAV;
     var p = a.play();
     if(p && typeof p.catch === 'function') p.catch(function(){});
     setTimeout(function(){
-      try{ a.pause(); }catch(e){}
-    }, 60);
+      try{
+        a.pause();
+        a.currentTime = 0;
+        a.volume = 1.0;
+      }catch(e){}
+    }, 80);
   }catch(e){}
 }
 
-/* 只停止当前播放，不改变 token */
 function stopYoudaoAudio(){
   if(_ydAudio){
     try{
@@ -467,7 +483,6 @@ function stopYoudaoAudio(){
   _ttsPlaying = false;
 }
 
-/* 有道失败时，退回浏览器自带语音 */
 function fallbackSpeak(text, onDone){
   var called = false;
   function fin(){ if(called) return; called = true; if(onDone) onDone(); }
@@ -475,14 +490,13 @@ function fallbackSpeak(text, onDone){
     if(!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)){ fin(); return; }
     window.speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1.05; u.volume = 1.0;
+    u.lang = 'en-GB'; u.rate = 0.85; u.pitch = 1.05; u.volume = 1.0;
     u.onend = fin; u.onerror = fin;
     window.speechSynthesis.speak(u);
     setTimeout(fin, 10000);
   }catch(e){ fin(); }
 }
 
-/* 核心播放 */
 function playYoudao(text, token, onEnd){
   if(!text){ if(onEnd) onEnd(); return; }
   if(token !== _ydToken){ if(onEnd) onEnd(); return; }
@@ -499,7 +513,7 @@ function playYoudao(text, token, onEnd){
   function finish(){
     if(finished) return;
     finished = true;
-    if(token !== _ydToken) return;      // 已被取消，吞掉回调
+    if(token !== _ydToken) return;
     _ttsPlaying = false;
     if(onEnd) onEnd();
   }
@@ -522,10 +536,9 @@ function playYoudao(text, token, onEnd){
       fallbackSpeak(text, finish);
     });
   }
-  setTimeout(finish, 12000);   // 安全兜底
+  setTimeout(finish, 12000);
 }
 
-/* 取消一切语音（切换题目时调用） */
 function cancelSpeech(){
   speakSession++;
   _ydToken++;
@@ -534,19 +547,30 @@ function cancelSpeech(){
   stopSpeakRecognition();
 }
 
-/* 直接朗读一次 */
-function speak(text){
-  if(!save || save.muted || !text) return;
+/* 读一次（可选 onEnd 回调，用来精确结束动画） */
+function speak(text, onEnd){
+  if(!save || save.muted || !text){
+    if(onEnd){ try{ onEnd(); }catch(e){} }
+    return;
+  }
   _ydToken++;
   var myToken = _ydToken;
   stopYoudaoAudio();
+  var ended = false;
+  function safeEnd(){
+    if(ended) return;
+    ended = true;
+    if(onEnd){ try{ onEnd(); }catch(e){} }
+  }
   setTimeout(function(){
-    if(myToken !== _ydToken) return;
-    playYoudao(text, myToken, null);
+    if(myToken !== _ydToken){ safeEnd(); return; }
+    playYoudao(text, myToken, safeEnd);
   }, 40);
+  /* 兜底：无论如何 9 秒后清掉回调 */
+  setTimeout(safeEnd, 9000);
 }
 
-/* 朗读两遍（中间留 700ms） */
+/* 读两次（听力用），两次之间留 700ms */
 function speakWithDelay(text){
   if(!text) return;
   _ydToken++;
@@ -2384,16 +2408,55 @@ function renderOrder(q, qb){
   }
   renderZone();
 }
+
+/* ★★★ 跟读题：进入自动读一次；点喇叭每按一次读一次 ★★★ */
 function renderSpeak(q, qb){
   addLabel('跟读', qb);
-  var status = document.createElement('div'); status.className = 'speak-status'; status.textContent = '点麦克风开始朗读';
+  var status = document.createElement('div'); status.className = 'speak-status'; status.textContent = '点喇叭听发音，点麦克风开始朗读';
   var sent = document.createElement('div'); sent.className = 'speak-sentence'; sent.textContent = q.sentence;
+
+  var btnRow = document.createElement('div'); btnRow.className = 'speak-btn-row';
+
+  var spkCol = document.createElement('div'); spkCol.className = 'speak-btn-col spk-col';
+  var spkBtn = document.createElement('button'); spkBtn.className = 'speak-speaker'; spkBtn.textContent = '🔊';
+  var spkLabel = document.createElement('div'); spkLabel.className = 'speak-btn-label'; spkLabel.textContent = '播放语音';
+  spkCol.appendChild(spkBtn); spkCol.appendChild(spkLabel);
+
+  var micCol = document.createElement('div'); micCol.className = 'speak-btn-col mic-col';
   var mic = document.createElement('button'); mic.className = 'speak-mic'; mic.textContent = '🎤';
+  var micLabel = document.createElement('div'); micLabel.className = 'speak-btn-label'; micLabel.textContent = '开始朗读';
+  micCol.appendChild(mic); micCol.appendChild(micLabel);
+
+  btnRow.appendChild(spkCol); btnRow.appendChild(micCol);
+
   var tip = document.createElement('div'); tip.className = 'speak-tip'; tip.textContent = '';
   var doneBtn = document.createElement('button');
   doneBtn.className = 'btn btn-primary'; doneBtn.style.marginTop = '18px'; doneBtn.textContent = '✓ 我读好了';
-  qb.appendChild(status); qb.appendChild(sent); qb.appendChild(mic); qb.appendChild(tip); qb.appendChild(doneBtn);
-  unlockSpeech(); speakWithDelay(q.sentence);
+
+  qb.appendChild(status); qb.appendChild(sent); qb.appendChild(btnRow); qb.appendChild(tip); qb.appendChild(doneBtn);
+
+  var spkPlayingTimer = null;
+  function stopSpkAnim(){
+    if(spkPlayingTimer){ clearTimeout(spkPlayingTimer); spkPlayingTimer = null; }
+    spkBtn.classList.remove('playing');
+  }
+  spkBtn.onclick = function(){
+    sfxClick();
+    unlockSpeech();
+    if(isRecording){ stopRecording(); }
+    stopSpkAnim();
+    void spkBtn.offsetWidth;
+    spkBtn.classList.add('playing');
+    /* 兜底：最多 9 秒后一定清动画 */
+    spkPlayingTimer = setTimeout(stopSpkAnim, 9000);
+    speak(q.sentence, stopSpkAnim);
+    var r = spkBtn.getBoundingClientRect();
+    sparkle(r.left + r.width/2, r.top + r.height/2, '#60a5fa', 16);
+  };
+
+  /* 进入题目时自动读一次 */
+  unlockSpeech();
+  speak(q.sentence);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
@@ -2476,7 +2539,7 @@ function renderSpeak(q, qb){
     accumulatedText = '';
     hasRecorded = true;
     isRecording = true;
-    /* 只停语音，不停自己 */
+    stopSpkAnim();
     speakSession++;
     _ydToken++;
     stopYoudaoAudio();
@@ -2512,6 +2575,7 @@ function renderSpeak(q, qb){
       status.textContent = '录音已停止，点麦克风可重新开始';
       return;
     }
+    unlockSpeech();
     startRecording();
   };
 
@@ -2561,6 +2625,7 @@ function renderSpeak(q, qb){
     }
   };
 }
+
 function similarity(a,b){ if(!a || !b) return 0; var longer = a.length > b.length ? a : b; var shorter = a.length > b.length ? b : a; if(longer.length === 0) return 1; return (longer.length - editDistance(longer, shorter)) / longer.length; }
 function editDistance(a,b){
   var d = []; for(var i=0;i<=b.length;i++) d[i] = [i];
