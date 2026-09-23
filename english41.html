@@ -1509,7 +1509,8 @@ function speakTTS(text, onEnd){
     }catch(e){ if(onEnd){ try{ onEnd(); }catch(e){} } }
   }, 60);
 }
-function playYoudao(text, onEnd){
+function playYoudao(text, onEnd, allowFallback){
+  if(allowFallback === undefined) allowFallback = true;
   _ydToken++;
   var myToken = _ydToken;
   var a = null;
@@ -1519,7 +1520,7 @@ function playYoudao(text, onEnd){
     a.setAttribute('playsinline','');
     a.volume = 1.0;
   }catch(e){ a = null; }
-  if(!a){ speakTTS(text, onEnd); return; }
+  if(!a){ if(allowFallback) speakTTS(text, onEnd); else if(onEnd){ try{ onEnd(); }catch(e){} } return; }
   var finished = false;
   var wentTTS = false;
   var audible = false;
@@ -1535,6 +1536,7 @@ function playYoudao(text, onEnd){
     wentTTS = true;
     try{ a.onended = null; a.onerror = null; a.pause(); }catch(e){}
     if(myToken !== _ydToken){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+    if(!allowFallback){ finish(); return; }
     speakTTS(text, finish);
   }
   a.onended = function(){
@@ -1572,7 +1574,8 @@ function playYoudao(text, onEnd){
     else finish();
   }, 2000);
 }
-function speak(text, onEnd){
+function speak(text, onEnd, allowFallback){
+  if(allowFallback === undefined) allowFallback = true;
   if(!save || save.muted || !text){
     if(onEnd){ try{ onEnd(); }catch(e){} }
     return;
@@ -1580,14 +1583,14 @@ function speak(text, onEnd){
   var trimmed = String(text).replace(/\s+/g, ' ').trim();
   if(!trimmed){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
   var isSingleWord = trimmed.indexOf(' ') === -1;
-  if(isSingleWord){ playYoudao(trimmed, onEnd); }
+  if(isSingleWord){ playYoudao(trimmed, onEnd, allowFallback); }
   else { speakTTS(text, onEnd); }
 }
-function speakWithDelay(text){
+function speakWithDelay(text, allowFallback){
   if(!text) return;
   speak(text, function(){
-    setTimeout(function(){ speak(text, null); }, 600);
-  });
+    setTimeout(function(){ speak(text, null, allowFallback); }, 600);
+  }, allowFallback);
 }
 if(speechReady){
   try{
@@ -2106,8 +2109,8 @@ function renderQuestion(){
     else if(q.t==='listen'){
       addLabel('听力题', qb); addPrompt(q.q, qb);
       var btn = document.createElement('button'); btn.className='listen-btn'; btn.textContent='🔊';
-      btn.onclick = function(){ speak(q.word); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
-      qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech(); speakWithDelay(q.word);
+      btn.onclick = function(){ speak(q.word, null, true); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
+      qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech(); speakWithDelay(q.word, false);
     }
     else if(q.t==='spell') renderSpell(q, qb);
     else if(q.t==='order') renderOrder(q, qb);
@@ -2227,7 +2230,7 @@ function renderSpell(q, qb){
                 _spellJumped = true;
                 setTimeout(nextQuestion, 300);
               };
-              speak(q.word, _spellJump);
+              speak(q.word, _spellJump, true);
               setTimeout(_spellJump, 9000);
             }
             else {
@@ -2344,13 +2347,13 @@ function renderSpeak(q, qb){
     void spkBtn.offsetWidth;
     spkBtn.classList.add('playing');
     spkPlayingTimer = setTimeout(stopSpkAnim, 15000);
-    speak(q.sentence, stopSpkAnim);
+    speak(q.sentence, stopSpkAnim, true);
     var r = spkBtn.getBoundingClientRect();
     sparkle(r.left + r.width/2, r.top + r.height/2, '#60a5fa', 16);
   };
 
   unlockSpeech();
-  speakWithDelay(q.sentence);
+  speakWithDelay(q.sentence, false);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
