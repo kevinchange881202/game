@@ -424,7 +424,9 @@ var SFX_VOL_MULT = 2.0;
 var SPEAK_VOL_MULT = 1.5;
 var _speakRecStopFn = null;
 var _ttsPlaying = false;
-var _ydToken = 0;
+var _speakGeneration = 0;
+var _currentAudio = null;
+var _speakDelayTimer = null;
 var YD_TTS_TYPE = 2;
 var YD_TTS_URL = 'https://dict.youdao.com/dictvoice';
 
@@ -1451,7 +1453,7 @@ function sfxCheer(){
     }catch(e){}
   });
 }
-/* ============ 修改 ①：getEnglishVoice 优先 Samantha ============ */
+/* ===== 语音模块（已还原为每次新建 Audio，避免 iOS 复用元素卡死 + Windows 电流声） ===== */
 function getEnglishVoice(){
   if(englishVoice) return englishVoice;
   try{
@@ -1480,38 +1482,17 @@ function unlockSpeech(){
     setTimeout(function(){ try{ getEnglishVoice(); }catch(e){} }, 200);
   }catch(e){}
 }
-/* ============ 新增：共享 Audio 元素 + 预授权 ============ */
-var _sharedAudio = null;
-var _sharedAudioReady = false;
-
-function primeSharedAudio(){
-  if(_sharedAudio) return;
-  try{
-    _sharedAudio = new Audio();
-    _sharedAudio.setAttribute('playsinline','');
-    _sharedAudio.preload = 'auto';
-    _sharedAudio.volume = 1.0;
-    _sharedAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
-    var p = _sharedAudio.play();
-    if(p && p.then){
-      p.then(function(){
-        try{ _sharedAudio.pause(); _sharedAudio.currentTime = 0; }catch(e){}
-        _sharedAudioReady = true;
-      }).catch(function(){
-        _sharedAudioReady = true;
-      });
-    } else {
-      _sharedAudioReady = true;
-    }
-  }catch(e){ _sharedAudio = null; }
-}
-
-var speakSession = 0;
 function cancelSpeech(){
-  speakSession++;
-  _ydToken++;
+  _speakGeneration++;
   _ttsPlaying = false;
   try{ window.speechSynthesis.cancel(); }catch(e){}
+  if(_speakDelayTimer){ clearTimeout(_speakDelayTimer); _speakDelayTimer = null; }
+  if(_currentAudio){
+    var old = _currentAudio;
+    _currentAudio = null;
+    try{ old.onended = null; old.onerror = null; }catch(e){}
+    try{ old.pause(); }catch(e){}
+  }
   stopSpeakRecognition();
 }
 function speakTTS(text, onEnd){
@@ -1519,18 +1500,23 @@ function speakTTS(text, onEnd){
     if(onEnd){ try{ onEnd(); }catch(e){} }
     return;
   }
-  speakSession++;
-  var mySession = speakSession;
+  var gen = _speakGeneration;
   try{ window.speechSynthesis.cancel(); }catch(e){}
   setTimeout(function(){
-    if(mySession !== speakSession){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+    if(gen !== _speakGeneration){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
     try{
       if(!englishVoice) getEnglishVoice();
       var u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
       var v = getEnglishVoice(); if(v) u.voice = v;
       var done = false;
-      function fin(){ if(done) return; done = true; _ttsPlaying = false; if(onEnd){ try{ onEnd(); }catch(e){} } }
+      function fin(){
+        if(done) return;
+        done = true;
+        _ttsPlaying = false;
+        if(gen !== _speakGeneration) return;
+        if(onEnd){ try{ onEnd(); }catch(e){} }
+      }
       u.onend = fin;
       u.onerror = fin;
       _ttsPlaying = true;
@@ -1539,74 +1525,52 @@ function speakTTS(text, onEnd){
     }catch(e){ if(onEnd){ try{ onEnd(); }catch(e){} } }
   }, 60);
 }
-/* ============ 修改 ②：playYoudao 复用共享 Audio + 修好兜底逻辑 ============ */
 function playYoudao(text, onEnd, allowFallback){
   if(allowFallback === undefined) allowFallback = true;
-  _ydToken++;
-  var myToken = _ydToken;
-  var a = _sharedAudio;
-  if(!a){
-    try{
-      a = new Audio();
-      a.preload = 'auto';
-      a.setAttribute('playsinline','');
-      a.volume = 1.0;
-    }catch(e){ a = null; }
-  }
+  var gen = _speakGeneration;
+  var a = null;
+  try{
+    a = new Audio();
+    a.preload = 'auto';
+    a.setAttribute('playsinline','');
+    a.volume = 1.0;
+  }catch(e){ a = null; }
   if(!a){
     if(allowFallback){ speakTTS(text, onEnd); }
     else if(onEnd){ try{ onEnd(); }catch(e){} }
     return;
   }
-  try{ window.speechSynthesis.cancel(); }catch(e){}
-
-  if(a === _sharedAudio){
-    try{ a.pause(); }catch(e){}
-    try{ a.currentTime = 0; }catch(e){}
-    a.onended = null;
-    a.onerror = null;
+  if(_currentAudio && _currentAudio !== a){
+    var prev = _currentAudio;
+    _currentAudio = null;
+    try{ prev.onended = null; prev.onerror = null; }catch(e){}
+    try{ prev.pause(); }catch(e){}
   }
-
+  _currentAudio = a;
   var finished = false;
   var wentTTS = false;
-  var audible = false;
-  var probe = null;
-
   function finish(){
     if(finished) return;
     finished = true;
-    if(probe){ clearInterval(probe); probe = null; }
+    if(_currentAudio === a) _currentAudio = null;
     _ttsPlaying = false;
-    if(myToken !== _ydToken) return;
+    if(gen !== _speakGeneration) return;
     if(onEnd){ try{ onEnd(); }catch(e){} }
   }
   function goTTS(){
     if(wentTTS || finished) return;
     wentTTS = true;
-    if(probe){ clearInterval(probe); probe = null; }
-    try{ a.onended = null; a.onerror = null; a.pause(); }catch(e){}
-    if(myToken !== _ydToken){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+    try{ a.onended = null; a.onerror = null; }catch(e){}
+    try{ a.pause(); }catch(e){}
+    if(_currentAudio === a) _currentAudio = null;
+    if(gen !== _speakGeneration){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
     if(!allowFallback){ finish(); return; }
     speakTTS(text, finish);
   }
-
-  a.onended = function(){
-    if(finished || wentTTS) return;
-    finish();
-  };
-  a.onerror = function(){
-    if(finished || wentTTS) return;
-    goTTS();
-  };
-
-  probe = setInterval(function(){
-    if(finished || wentTTS){ clearInterval(probe); probe = null; return; }
-    if(a.currentTime > 0.08) audible = true;
-  }, 120);
-
+  a.onended = function(){ if(!finished && !wentTTS) finish(); };
+  a.onerror = function(){ if(!finished && !wentTTS) goTTS(); };
   var url = YD_TTS_URL + '?audio=' + encodeURIComponent(text) + '&type=' + YD_TTS_TYPE;
   try{ a.src = url; }catch(e){ goTTS(); return; }
-
   _ttsPlaying = true;
   var p = null;
   try{ p = a.play(); }catch(e){ p = null; }
@@ -1614,17 +1578,17 @@ function playYoudao(text, onEnd, allowFallback){
     p.catch(function(){
       setTimeout(function(){
         if(finished || wentTTS) return;
-        if(!a.paused || a.currentTime > 0.05){ audible = true; return; }
+        if(!a.paused && a.currentTime > 0.05) return;
         goTTS();
-      }, 300);
+      }, 200);
     });
   }
   setTimeout(function(){
     if(finished || wentTTS) return;
-    if(!audible){ goTTS(); }
-  }, 2500);
+    if(gen !== _speakGeneration) return;
+    if(a.currentTime <= 0.05){ goTTS(); }
+  }, 2000);
 }
-/* ============ 修改 ③：speak 全部先走有道 ============ */
 function speak(text, onEnd, allowFallback){
   if(allowFallback === undefined) allowFallback = true;
   if(!save || save.muted || !text){
@@ -1637,8 +1601,14 @@ function speak(text, onEnd, allowFallback){
 }
 function speakWithDelay(text, allowFallback){
   if(!text) return;
+  var gen = _speakGeneration;
   speak(text, function(){
-    setTimeout(function(){ speak(text, null, allowFallback); }, 600);
+    if(gen !== _speakGeneration) return;
+    _speakDelayTimer = setTimeout(function(){
+      _speakDelayTimer = null;
+      if(gen !== _speakGeneration) return;
+      speak(text, null, allowFallback);
+    }, 600);
   }, allowFallback);
 }
 if(speechReady){
@@ -2160,7 +2130,6 @@ function renderQuestion(){
       var btn = document.createElement('button'); btn.className='listen-btn'; btn.textContent='🔊';
       btn.onclick = function(){ speak(q.word, null, true); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
       qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech();
-      /* 修改 ④-a：听力自动播放允许兜底 */
       speakWithDelay(q.word, true);
     }
     else if(q.t==='spell') renderSpell(q, qb);
@@ -2404,7 +2373,6 @@ function renderSpeak(q, qb){
   };
 
   unlockSpeech();
-  /* 修改 ④-b：跟读自动播放允许兜底 */
   speakWithDelay(q.sentence, true);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2485,10 +2453,16 @@ function renderSpeak(q, qb){
     hasRecorded = true;
     isRecording = true;
     stopSpkAnim();
-    speakSession++;
-    _ydToken++;
+    _speakGeneration++;
     _ttsPlaying = false;
     try{ window.speechSynthesis.cancel(); }catch(e){}
+    if(_speakDelayTimer){ clearTimeout(_speakDelayTimer); _speakDelayTimer = null; }
+    if(_currentAudio){
+      var oldA = _currentAudio;
+      _currentAudio = null;
+      try{ oldA.onended = null; oldA.onerror = null; }catch(e){}
+      try{ oldA.pause(); }catch(e){}
+    }
     status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
     tip.textContent = '';
 
@@ -3081,8 +3055,8 @@ function renderShop(){
 }
 function bindEvents(){
   function bind(id, fn){ var el = $(id); if(el) el.onclick = fn; }
-  bind('btn-start', function(){ primeSharedAudio(); initAudio(); unlockSpeech(); sfxClick(); showScreen('s-map'); renderMap(); });
-  bind('btn-continue-game', function(){ primeSharedAudio(); initAudio(); unlockSpeech(); sfxClick(); resumeGame(); });
+  bind('btn-start', function(){ initAudio(); unlockSpeech(); sfxClick(); showScreen('s-map'); renderMap(); });
+  bind('btn-continue-game', function(){ initAudio(); unlockSpeech(); sfxClick(); resumeGame(); });
   bind('btn-home', function(){ sfxClick(); cancelSpeech(); renderHome(); showScreen('s-home'); });
   bind('btn-shop', function(){ sfxClick(); renderShop(); showScreen('s-shop'); });
   bind('btn-shop-back', function(){ sfxClick(); renderHome(); showScreen('s-home'); });
@@ -3171,14 +3145,11 @@ function init(){
     document.addEventListener('touchstart', keepAudioAlive, {passive:true});
     document.addEventListener('mousedown', keepAudioAlive);
     document.addEventListener('click', keepAudioAlive);
-    /* 新增：首次任意手势就预授权共享 Audio 元素 */
-    document.addEventListener('touchstart', function(){ primeSharedAudio(); }, {once:true, passive:true});
-    document.addEventListener('mousedown',  function(){ primeSharedAudio(); }, {once:true});
     document.addEventListener('visibilitychange', function(){
-      if(document.hidden){ bgPaused = true; persistNow(); }
+      if(document.hidden){ bgPaused = true; persistNow(); cancelSpeech(); }
       else { bgPaused = false; ensureAudioRunning(); }
     });
-    window.addEventListener('pagehide', function(){ bgPaused = true; persistNow(); });
+    window.addEventListener('pagehide', function(){ bgPaused = true; persistNow(); cancelSpeech(); });
     window.addEventListener('pageshow', function(){ bgPaused = false; ensureAudioRunning(); });
     window.addEventListener('beforeunload', persistNow);
     bgLoop(); fxLoop();
