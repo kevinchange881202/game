@@ -1575,7 +1575,6 @@ function speak(text){
 function speakOnce(text, onEnd, sessionId){
   if(!save || save.muted || !speechReady || !text){ if(onEnd) onEnd(); return; }
   if(sessionId !== undefined && sessionId !== speakSession){ if(onEnd) onEnd(); return; }
-  suspendAudioForSpeak();
   var ended = false;
   function finishAll(){
     if(ended) return;
@@ -1584,17 +1583,21 @@ function speakOnce(text, onEnd, sessionId){
     resumeAudioAfterSpeak();
     if(onEnd) onEnd();
   }
-  try{
-    if(!englishVoice) getEnglishVoice();
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
-    var v = getEnglishVoice(); if(v) u.voice = v;
-    u.onend = finishAll; u.onerror = finishAll;
-    setTimeout(finishAll, 15000);
+  setTimeout(function(){
     if(sessionId !== undefined && sessionId !== speakSession){ return; }
-    _ttsPlaying = true;
-    window.speechSynthesis.speak(u);
-  }catch(e){ finishAll(); }
+    suspendAudioForSpeak();
+    try{
+      if(!englishVoice) getEnglishVoice();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
+      var v = getEnglishVoice(); if(v) u.voice = v;
+      u.onend = finishAll; u.onerror = finishAll;
+      setTimeout(finishAll, 15000);
+      if(sessionId !== undefined && sessionId !== speakSession){ return; }
+      _ttsPlaying = true;
+      window.speechSynthesis.speak(u);
+    }catch(e){ finishAll(); }
+  }, 100);
 }
 function speakWithDelay(text){
   if(!text) return;
@@ -2868,6 +2871,7 @@ function bossAnswer(btn, idx, correct, explain, q){
     }
     G.bossHp -= dmg; if(G.bossHp < 0) G.bossHp = 0;
     sfxHit(G.bossBase.sound);
+    setTimeout(function(){ sfxHit([180, 120]); }, 192);
     var av = $('boss-avatar');
     if(av){ var rect = av.getBoundingClientRect(); var cx = rect.left + rect.width/2; var cy = rect.top + rect.height/2; explode(cx, cy, '#fbbf24', 40); explode(cx, cy, '#ef4444', 20); showDamageNumber(cx, cy - 50, dmg, false); av.classList.remove('hit'); void av.offsetWidth; av.classList.add('hit'); }
     if(dmg >= 50){ screenShake(3); screenFlash('white'); } else if(dmg >= 30){ screenShake(2); screenFlash('gold'); } else { screenShake(1); screenFlash('gold'); }
@@ -3116,7 +3120,15 @@ function renderShop(){
 }
 function bindEvents(){
   function bind(id, fn){ var el = $(id); if(el) el.onclick = fn; }
-  bind('btn-start', function(){ initAudio(); unlockSpeech(); sfxClick(); showScreen('s-map'); renderMap(); });
+  bind('btn-start', function(){
+    initAudio(); unlockSpeech(); sfxClick();
+    try{
+      var warm = new SpeechSynthesisUtterance('a');
+      warm.lang = 'en-US'; warm.volume = 0; warm.rate = 1;
+      window.speechSynthesis.speak(warm);
+    }catch(e){}
+    showScreen('s-map'); renderMap();
+  });
   bind('btn-continue-game', function(){ initAudio(); unlockSpeech(); sfxClick(); resumeGame(); });
   bind('btn-home', function(){ sfxClick(); cancelSpeech(); renderHome(); showScreen('s-home'); });
   bind('btn-shop', function(){ sfxClick(); renderShop(); showScreen('s-shop'); });
