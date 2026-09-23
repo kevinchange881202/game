@@ -412,6 +412,7 @@ var IS_IPAD = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIn
 var SFX_VOL_MULT = 2.0;
 var SPEAK_VOL_MULT = 1.5;
 var _speakRecStopFn = null;
+var _ttsPlaying = false;
 function stopSpeakRecognition(){
   if(_speakRecStopFn){ try{ _speakRecStopFn(); }catch(e){} _speakRecStopFn = null; }
 }
@@ -1521,6 +1522,7 @@ function unlockSpeech(){
 var speakSession = 0;
 function cancelSpeech(){
   speakSession++;
+  _ttsPlaying = false;
   try{ window.speechSynthesis.cancel(); }catch(e){}
   stopSpeakRecognition();
 }
@@ -1536,8 +1538,11 @@ function speak(text){
       var u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
       var v = getEnglishVoice(); if(v) u.voice = v;
+      _ttsPlaying = true;
+      u.onend = function(){ _ttsPlaying = false; };
+      u.onerror = function(){ _ttsPlaying = false; };
       window.speechSynthesis.speak(u);
-    }catch(e){}
+    }catch(e){ _ttsPlaying = false; }
   }, 60);
 }
 function speakOnce(text, onEnd, sessionId){
@@ -1549,27 +1554,25 @@ function speakOnce(text, onEnd, sessionId){
     u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
     var v = getEnglishVoice(); if(v) u.voice = v;
     var ended = false;
-    function fireEnd(){ if(ended) return; ended = true; if(onEnd) onEnd(); }
-    if(onEnd){ u.onend = fireEnd; u.onerror = fireEnd; setTimeout(fireEnd, 15000); }
+    function fireEnd(){ if(ended) return; ended = true; _ttsPlaying = false; if(onEnd) onEnd(); }
+    u.onend = fireEnd; u.onerror = fireEnd; setTimeout(fireEnd, 15000);
     if(sessionId !== undefined && sessionId !== speakSession) return;
+    _ttsPlaying = true;
     window.speechSynthesis.speak(u);
-  }catch(e){ if(onEnd) onEnd(); }
+  }catch(e){ _ttsPlaying = false; if(onEnd) onEnd(); }
 }
 function speakWithDelay(text){
   if(!text) return;
   speakSession++;
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
-  setTimeout(function(){
+  speakOnce(text, function(){
     if(mySession !== speakSession) return;
-    speakOnce(text, function(){
+    setTimeout(function(){
       if(mySession !== speakSession) return;
-      setTimeout(function(){
-        if(mySession !== speakSession) return;
-        speakOnce(text, null, mySession);
-      }, 600);
-    }, mySession);
-  }, 600);
+      speakOnce(text, null, mySession);
+    }, 600);
+  }, mySession);
 }
 if(speechReady){
   try{
@@ -2393,6 +2396,7 @@ function renderSpeak(q, qb){
       rec.onend = function(){
         if(!isRecording || currentRec !== rec) return;
         currentRec = null;
+        createAndStart();
       };
 
       rec.start();
@@ -2412,6 +2416,7 @@ function renderSpeak(q, qb){
     hasRecorded = true;
     isRecording = true;
     speakSession++;
+    _ttsPlaying = false;
     try{ window.speechSynthesis.cancel(); }catch(e){}
     status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
     tip.textContent = '';
@@ -3124,6 +3129,7 @@ function init(){
     var keepAudioAlive = function(){
       initAudio();
       unlockSpeech();
+      if(_ttsPlaying) return;
       if(audioCtx && audioCtx.state !== 'running'){
         try{ audioCtx.resume(); }catch(e){}
       }
