@@ -1531,19 +1531,16 @@ function speak(text){
   speakSession++;
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
-  setTimeout(function(){
-    if(mySession !== speakSession) return;
-    try{
-      if(!englishVoice) getEnglishVoice();
-      var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
-      var v = getEnglishVoice(); if(v) u.voice = v;
-      _ttsPlaying = true;
-      u.onend = function(){ _ttsPlaying = false; };
-      u.onerror = function(){ _ttsPlaying = false; };
-      window.speechSynthesis.speak(u);
-    }catch(e){ _ttsPlaying = false; }
-  }, 60);
+  _ttsPlaying = true;
+  try{
+    if(!englishVoice) getEnglishVoice();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
+    var v = getEnglishVoice(); if(v) u.voice = v;
+    u.onend = function(){ _ttsPlaying = false; };
+    u.onerror = function(){ _ttsPlaying = false; };
+    window.speechSynthesis.speak(u);
+  }catch(e){ _ttsPlaying = false; }
 }
 function speakOnce(text, onEnd, sessionId){
   if(!save || save.muted || !speechReady || !text){ if(onEnd) onEnd(); return; }
@@ -1566,6 +1563,7 @@ function speakWithDelay(text){
   speakSession++;
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
+  _ttsPlaying = true;
   speakOnce(text, function(){
     if(mySession !== speakSession) return;
     setTimeout(function(){
