@@ -1557,9 +1557,6 @@ function speakOnce(text, onEnd, sessionId){
 }
 function speakWithDelay(text){
   if(!text) return;
-  if(audioCtx && audioCtx.state === 'running'){
-    try{ audioCtx.suspend(); }catch(e){}
-  }
   speakSession++;
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
@@ -2193,6 +2190,7 @@ function renderSpell(q, qb){
         s.textContent = filled[idx];
         s.onclick = (function(ii){
           return function(){
+            sfxUnpick();
             var rm = filled[ii]; filled[ii] = null;
             var btns = pool.querySelectorAll('.letter');
             for(var m=0;m<btns.length;m++){ if(btns[m].textContent === rm && btns[m].classList.contains('used')){ btns[m].classList.remove('used'); break; } }
@@ -2238,6 +2236,7 @@ function renderSpell(q, qb){
       if(ch.length > 1) b.classList.add('letter-word');
       b.onclick = function(){
         if(b.classList.contains('used')) return;
+        sfxPick();
         var ei = filled.indexOf(null); if(ei === -1) return;
         filled[ei] = ch; b.classList.add('used'); renderSlots();
         if(filled.indexOf(null) === -1){
@@ -2353,7 +2352,6 @@ function renderSpeak(q, qb){
       try{ currentRec.stop(); }catch(e){}
       currentRec = null;
     }
-    setTimeout(function(){ ensureAudioRunning(); }, 80);
   }
 
   _speakRecStopFn = function(){
@@ -2395,7 +2393,6 @@ function renderSpeak(q, qb){
       rec.onend = function(){
         if(!isRecording || currentRec !== rec) return;
         currentRec = null;
-        // 不再自动重启，避免反复抢占音频通道
       };
 
       rec.start();
@@ -2414,6 +2411,7 @@ function renderSpeak(q, qb){
     accumulatedText = '';
     hasRecorded = true;
     isRecording = true;
+    speakSession++;
     try{ window.speechSynthesis.cancel(); }catch(e){}
     status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
     tip.textContent = '';
