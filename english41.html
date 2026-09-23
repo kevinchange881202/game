@@ -1342,19 +1342,19 @@ function restartUnit(uIdx){
   persistNow();
   startUnit(u, 0, uIdx);
 }
-function initAudio(){ 
-  if(audioReady) return; 
-  try{ 
-    var AC = window.AudioContext || window.webkitAudioContext; 
-    if(AC){ 
-      audioCtx = new AC(); 
-      audioReady = true; 
+function initAudio(){
+  if(audioReady) return;
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(AC){
+      audioCtx = new AC();
+      audioReady = true;
       audioCtx.onstatechange = function(){
         if(audioCtx && (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted')){
           setTimeout(function(){ ensureAudioRunning(); }, 60);
         }
       };
-    } 
+    }
   }catch(e){}
 }
 function tone(f, d, t, v, delay){
@@ -1456,7 +1456,13 @@ function getEnglishVoice(){
   try{
     var voices = window.speechSynthesis.getVoices();
     if(!voices || voices.length === 0) return null;
-    var i, v, lang;
+    var i, v, lang, name;
+    for(i=0;i<voices.length;i++){
+      v = voices[i];
+      if(!v.name) continue;
+      name = v.name.toLowerCase();
+      if(name.indexOf('stephanie') !== -1){ englishVoice = v; return v; }
+    }
     for(i=0;i<voices.length;i++){
       v = voices[i]; if(!v.lang) continue;
       lang = v.lang.toLowerCase();
