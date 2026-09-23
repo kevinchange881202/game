@@ -1549,7 +1549,7 @@ function speak(text){
     try{
       if(!englishVoice) getEnglishVoice();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
+      u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
       var v = getEnglishVoice(); if(v) u.voice = v;
       _ttsPlaying = true;
       u.onend = function(){ _ttsPlaying = false; };
@@ -1564,7 +1564,7 @@ function speakOnce(text, onEnd, sessionId){
   try{
     if(!englishVoice) getEnglishVoice();
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
+    u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
     var v = getEnglishVoice(); if(v) u.voice = v;
     var ended = false;
     function fireEnd(){ if(ended) return; ended = true; _ttsPlaying = false; if(onEnd) onEnd(); }
@@ -1584,7 +1584,7 @@ function speakWithDelay(text){
     setTimeout(function(){
       if(mySession !== speakSession) return;
       speakOnce(text, null, mySession);
-    }, 800);
+    }, 1500);
   }, mySession);
 }
 if(speechReady){
@@ -2146,7 +2146,7 @@ function renderQuestion(){
       var btn = document.createElement('button'); btn.className='listen-btn'; btn.textContent='🔊';
       btn.onclick = function(){ speak(q.word); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
       qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech();
-      setTimeout(function(){ speakWithDelay(q.word); }, 500);
+      setTimeout(function(){ speakWithDelay(q.word); }, 1000);
     }
     else if(q.t==='spell') renderSpell(q, qb);
     else if(q.t==='order') renderOrder(q, qb);
@@ -2392,7 +2392,7 @@ function renderSpeak(q, qb){
   };
 
   unlockSpeech();
-  setTimeout(function(){ speak(q.sentence); }, 500);
+  setTimeout(function(){ speak(q.sentence); }, 1000);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
