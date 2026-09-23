@@ -417,7 +417,7 @@ function stopSpeakRecognition(){
 }
 function ensureAudioRunning(){
   if(!audioCtx) return;
-  if(audioCtx.state === 'suspended'){
+  if(audioCtx.state === 'suspended' || audioCtx.state === 'interrupted'){
     try{ audioCtx.resume(); }catch(e){}
   }
 }
@@ -1334,7 +1334,7 @@ function initAudio(){
       audioCtx = new AC(); 
       audioReady = true; 
       audioCtx.onstatechange = function(){
-        if(audioCtx && audioCtx.state === 'suspended'){
+        if(audioCtx && (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted')){
           setTimeout(function(){ ensureAudioRunning(); }, 60);
         }
       };
@@ -1361,6 +1361,20 @@ function tone(f, d, t, v, delay){
 function sfxClick(){
   initAudio();
   withAudioReady(function(){ tone(660,0.05,'sine',0.06); });
+}
+function sfxPick(){
+  initAudio();
+  withAudioReady(function(){
+    tone(784,0.06,'sine',0.08);
+    tone(1047,0.09,'sine',0.08,0.05);
+  });
+}
+function sfxUnpick(){
+  initAudio();
+  withAudioReady(function(){
+    tone(1047,0.06,'sine',0.08);
+    tone(784,0.09,'sine',0.08,0.05);
+  });
 }
 function sfxCorrect(){
   initAudio();
@@ -2269,6 +2283,7 @@ function renderOrder(q, qb){
       (function(idx){
         var b = document.createElement('button'); b.className='order-word'; b.textContent = picked[idx];
         b.onclick = function(){
+          sfxUnpick();
           var w = picked[idx]; picked.splice(idx,1);
           var btns = pool.querySelectorAll('.order-word');
           for(var m=0;m<btns.length;m++){ if(btns[m].textContent===w && btns[m].classList.contains('used')){ btns[m].classList.remove('used'); break; } }
@@ -2283,6 +2298,7 @@ function renderOrder(q, qb){
       var b = document.createElement('button'); b.className='order-word'; b.textContent = w;
       b.onclick = function(){
         if(b.classList.contains('used')) return;
+        sfxPick();
         picked.push(w); b.classList.add('used'); renderZone();
         if(picked.length === correct.length){
           var ans = picked.join(' ');
@@ -2379,7 +2395,7 @@ function renderSpeak(q, qb){
       rec.onend = function(){
         if(!isRecording || currentRec !== rec) return;
         currentRec = null;
-        createAndStart();
+        // 不再自动重启，避免反复抢占音频通道
       };
 
       rec.start();
@@ -2392,6 +2408,9 @@ function renderSpeak(q, qb){
   function startRecording(){
     if(!micAvailable) return;
     stopRecording();
+    if(audioCtx && audioCtx.state === 'running'){
+      try{ audioCtx.suspend(); }catch(e){}
+    }
     accumulatedText = '';
     hasRecorded = true;
     isRecording = true;
@@ -2461,8 +2480,13 @@ function renderSpeak(q, qb){
       finished = true;
       status.textContent = '✓ 读得不错！';
       tip.textContent = '';
-      correctFlow();
-      setTimeout(nextQuestion, 1000);
+      if(audioCtx && audioCtx.state !== 'running'){
+        try{ audioCtx.resume(); }catch(e){}
+      }
+      setTimeout(function(){
+        correctFlow();
+        setTimeout(nextQuestion, 1000);
+      }, 250);
     } else {
       status.textContent = '再读一遍～';
       tip.textContent = '点麦克风重新朗读';
@@ -3099,10 +3123,16 @@ function init(){
     var _resizeTimer = null;
     window.addEventListener('resize', function(){ if(_resizeTimer) clearTimeout(_resizeTimer); _resizeTimer = setTimeout(resizeAll, 200); });
     window.addEventListener('orientationchange', function(){ setTimeout(resizeAll, 300); });
-    var unlockAll = function(){ initAudio(); if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); unlockSpeech(); document.removeEventListener('touchstart', unlockAll); document.removeEventListener('mousedown', unlockAll); document.removeEventListener('click', unlockAll); };
-    document.addEventListener('touchstart', unlockAll, {passive:true});
-    document.addEventListener('mousedown', unlockAll);
-    document.addEventListener('click', unlockAll);
+    var keepAudioAlive = function(){
+      initAudio();
+      unlockSpeech();
+      if(audioCtx && audioCtx.state !== 'running'){
+        try{ audioCtx.resume(); }catch(e){}
+      }
+    };
+    document.addEventListener('touchstart', keepAudioAlive, {passive:true});
+    document.addEventListener('mousedown', keepAudioAlive);
+    document.addEventListener('click', keepAudioAlive);
     document.addEventListener('visibilitychange', function(){ 
       if(document.hidden){ bgPaused = true; persistNow(); }
       else { bgPaused = false; ensureAudioRunning(); }
