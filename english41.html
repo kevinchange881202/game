@@ -2440,6 +2440,11 @@ function renderSpeak(q, qb){
       try{ currentRec.stop(); }catch(e){}
       currentRec = null;
     }
+    try{
+      var _resetU = new SpeechSynthesisUtterance(' ');
+      _resetU.lang = 'en-US'; _resetU.volume = 0; _resetU.rate = 1;
+      window.speechSynthesis.speak(_resetU);
+    }catch(e){}
   }
 
   _speakRecStopFn = function(){
