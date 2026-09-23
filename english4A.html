@@ -1584,7 +1584,7 @@ function speakWithDelay(text){
     setTimeout(function(){
       if(mySession !== speakSession) return;
       speakOnce(text, null, mySession);
-    }, 600);
+    }, 800);
   }, mySession);
 }
 if(speechReady){
@@ -2145,7 +2145,8 @@ function renderQuestion(){
       addLabel('听力题', qb); addPrompt(q.q, qb);
       var btn = document.createElement('button'); btn.className='listen-btn'; btn.textContent='🔊';
       btn.onclick = function(){ speak(q.word); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
-      qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech(); speakWithDelay(q.word);
+      qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech();
+      setTimeout(function(){ speakWithDelay(q.word); }, 500);
     }
     else if(q.t==='spell') renderSpell(q, qb);
     else if(q.t==='order') renderOrder(q, qb);
@@ -2259,7 +2260,19 @@ function renderSpell(q, qb){
           var ansStr = filled.join('');
           var targetStr = targetLetters.join('');
           setTimeout(function(){
-            if(ansStr === targetStr){ correctFlow(); speak(q.word); setTimeout(nextQuestion, 1000); }
+            if(ansStr === targetStr){
+              correctFlow();
+              var _spellSession = speakSession;
+              var _spellJumped = false;
+              var _spellJump = function(){
+                if(_spellJumped) return;
+                if(speakSession !== _spellSession) return;
+                _spellJumped = true;
+                setTimeout(nextQuestion, 300);
+              };
+              speakOnce(q.word, _spellJump, _spellSession);
+              setTimeout(_spellJump, 9000);
+            }
             else {
               wrongFlow(q);
               setTimeout(function(){
@@ -2378,7 +2391,8 @@ function renderSpeak(q, qb){
     sparkle(r.left + r.width/2, r.top + r.height/2, '#60a5fa', 16);
   };
 
-  unlockSpeech(); speak(q.sentence);
+  unlockSpeech();
+  setTimeout(function(){ speak(q.sentence); }, 500);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
