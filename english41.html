@@ -423,21 +423,27 @@ var bgFrameSkip = 0;
 var bgPaused = false;
 var IS_IPAD = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var SFX_VOL_MULT = 2.0;
-var SPEAK_VOL_MULT = 1.5;
+var SPEAK_VOL_MULT = 1.0;
 var _speakRecStopFn = null;
 var _ttsPlaying = false;
-var speakSession = 0;
-var _currentAudio = null;
-var _speakDelayTimer = null;
-var YD_TTS_TYPE = 2;
-var YD_TTS_URL = 'https://dict.youdao.com/dictvoice';
-
+var _audioCtxSuspendedBySpeak = false;
 function stopSpeakRecognition(){
   if(_speakRecStopFn){ try{ _speakRecStopFn(); }catch(e){} _speakRecStopFn = null; }
 }
 function ensureAudioRunning(){
   if(!audioCtx) return;
   if(audioCtx.state === 'suspended' || audioCtx.state === 'interrupted'){
+    try{ audioCtx.resume(); }catch(e){}
+  }
+}
+function suspendAudioForSpeak(){
+  if(audioCtx && audioCtx.state === 'running'){
+    try{ audioCtx.suspend(); _audioCtxSuspendedBySpeak = true; }catch(e){}
+  }
+}
+function resumeAudioAfterSpeak(){
+  if(_audioCtxSuspendedBySpeak && audioCtx){
+    _audioCtxSuspendedBySpeak = false;
     try{ audioCtx.resume(); }catch(e){}
   }
 }
@@ -1346,19 +1352,19 @@ function restartUnit(uIdx){
   persistNow();
   startUnit(u, 0, uIdx);
 }
-function initAudio(){
-  if(audioReady) return;
-  try{
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if(AC){
-      audioCtx = new AC();
-      audioReady = true;
+function initAudio(){ 
+  if(audioReady) return; 
+  try{ 
+    var AC = window.AudioContext || window.webkitAudioContext; 
+    if(AC){ 
+      audioCtx = new AC(); 
+      audioReady = true; 
       audioCtx.onstatechange = function(){
         if(audioCtx && (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted')){
-          setTimeout(function(){ ensureAudioRunning(); }, 60);
+          if(!_audioCtxSuspendedBySpeak){ setTimeout(function(){ ensureAudioRunning(); }, 60); }
         }
       };
-    }
+    } 
   }catch(e){}
 }
 function tone(f, d, t, v, delay){
@@ -1378,14 +1384,60 @@ function tone(f, d, t, v, delay){
     }catch(e){}
   });
 }
-function sfxClick(){ initAudio(); withAudioReady(function(){ tone(660,0.05,'sine',0.06); }); }
-function sfxPick(){ initAudio(); withAudioReady(function(){ tone(784,0.06,'sine',0.08); tone(1047,0.09,'sine',0.08,0.05); }); }
-function sfxUnpick(){ initAudio(); withAudioReady(function(){ tone(1047,0.06,'sine',0.08); tone(784,0.09,'sine',0.08,0.05); }); }
-function sfxCorrect(){ initAudio(); withAudioReady(function(){ tone(523,0.1,'sine',0.09); tone(659,0.1,'sine',0.09,0.09); tone(784,0.2,'sine',0.1,0.18); }); }
-function sfxWrong(){ initAudio(); withAudioReady(function(){ tone(300,0.14,'sine',0.07); tone(220,0.24,'sine',0.07,0.12); }); }
-function sfxCoin(){ initAudio(); withAudioReady(function(){ tone(1400,0.05,'sine',0.06); tone(1900,0.1,'sine',0.06,0.04); }); }
-function sfxLevelUp(){ initAudio(); withAudioReady(function(){ var n=[523,659,784,1047]; for(var i=0;i<n.length;i++) tone(n[i],0.18,'triangle',0.09,i*0.1); }); }
-function sfxBadge(){ initAudio(); withAudioReady(function(){ var n=[784,988,1175,1568]; for(var i=0;i<n.length;i++) tone(n[i],0.22,'triangle',0.1,i*0.12); }); }
+function sfxClick(){
+  initAudio();
+  withAudioReady(function(){ tone(660,0.05,'sine',0.06); });
+}
+function sfxPick(){
+  initAudio();
+  withAudioReady(function(){
+    tone(784,0.06,'sine',0.08);
+    tone(1047,0.09,'sine',0.08,0.05);
+  });
+}
+function sfxUnpick(){
+  initAudio();
+  withAudioReady(function(){
+    tone(1047,0.06,'sine',0.08);
+    tone(784,0.09,'sine',0.08,0.05);
+  });
+}
+function sfxCorrect(){
+  initAudio();
+  withAudioReady(function(){
+    tone(523,0.1,'sine',0.09);
+    tone(659,0.1,'sine',0.09,0.09);
+    tone(784,0.2,'sine',0.1,0.18);
+  });
+}
+function sfxWrong(){
+  initAudio();
+  withAudioReady(function(){
+    tone(300,0.14,'sine',0.07);
+    tone(220,0.24,'sine',0.07,0.12);
+  });
+}
+function sfxCoin(){
+  initAudio();
+  withAudioReady(function(){
+    tone(1400,0.05,'sine',0.06);
+    tone(1900,0.1,'sine',0.06,0.04);
+  });
+}
+function sfxLevelUp(){
+  initAudio();
+  withAudioReady(function(){
+    var n=[523,659,784,1047];
+    for(var i=0;i<n.length;i++) tone(n[i],0.18,'triangle',0.09,i*0.1);
+  });
+}
+function sfxBadge(){
+  initAudio();
+  withAudioReady(function(){
+    var n=[784,988,1175,1568];
+    for(var i=0;i<n.length;i++) tone(n[i],0.22,'triangle',0.1,i*0.12);
+  });
+}
 function sfxHit(base){
   initAudio();
   if(!audioCtx || (save && save.muted)) return;
@@ -1405,8 +1457,20 @@ function sfxHit(base){
     }catch(e){}
   });
 }
-function sfxBossWin(){ initAudio(); withAudioReady(function(){ var n = [523,659,784,1047,1319,1568,2093]; for(var i=0;i<n.length;i++) tone(n[i],0.24,'triangle',0.12,i*0.11); }); }
-function sfxBossLose(){ initAudio(); withAudioReady(function(){ var n = [400,350,300,220,180]; for(var i=0;i<n.length;i++) tone(n[i],0.24,'sawtooth',0.09,i*0.15); }); }
+function sfxBossWin(){
+  initAudio();
+  withAudioReady(function(){
+    var n = [523,659,784,1047,1319,1568,2093];
+    for(var i=0;i<n.length;i++) tone(n[i],0.24,'triangle',0.12,i*0.11);
+  });
+}
+function sfxBossLose(){
+  initAudio();
+  withAudioReady(function(){
+    var n = [400,350,300,220,180];
+    for(var i=0;i<n.length;i++) tone(n[i],0.24,'sawtooth',0.09,i*0.15);
+  });
+}
 function sfxFirework(){
   initAudio();
   if(!audioCtx || (save && save.muted)) return;
@@ -1455,23 +1519,19 @@ function sfxCheer(){
     }catch(e){}
   });
 }
-/* ===== 语音引擎：优先 Samantha，所有单词/句子先走有道，失败兜底 TTS ===== */
 function getEnglishVoice(){
   if(englishVoice) return englishVoice;
   try{
     var voices = window.speechSynthesis.getVoices();
     if(!voices || voices.length === 0) return null;
-    var samantha = null, enUS = null, enAny = null;
+    var fallback = null;
     for(var i=0;i<voices.length;i++){
       var v = voices[i]; if(!v.lang) continue;
       var lang = v.lang.toLowerCase();
-      var name = (v.name || '').toLowerCase();
-      if(!samantha && name.indexOf('samantha') !== -1) samantha = v;
-      if(!enUS && (lang.indexOf('en-us') === 0 || lang.indexOf('en_us') === 0)) enUS = v;
-      if(!enAny && lang.indexOf('en') === 0) enAny = v;
+      if(lang.indexOf('en-us') === 0 || lang.indexOf('en_us') === 0){ englishVoice = v; return v; }
+      if(!fallback && lang.indexOf('en') === 0) fallback = v;
     }
-    englishVoice = samantha || enUS || enAny;
-    return englishVoice;
+    if(fallback){ englishVoice = fallback; return fallback; }
   }catch(e){}
   return null;
 }
@@ -1484,132 +1544,70 @@ function unlockSpeech(){
     setTimeout(function(){ try{ getEnglishVoice(); }catch(e){} }, 200);
   }catch(e){}
 }
-function killCurrentAudio(){
-  if(_currentAudio){
-    var a = _currentAudio;
-    _currentAudio = null;
-    try{ a.onended = null; a.onerror = null; }catch(e){}
-    try{ a.pause(); }catch(e){}
-  }
-}
+var speakSession = 0;
 function cancelSpeech(){
   speakSession++;
   _ttsPlaying = false;
   try{ window.speechSynthesis.cancel(); }catch(e){}
-  if(_speakDelayTimer){ clearTimeout(_speakDelayTimer); _speakDelayTimer = null; }
-  killCurrentAudio();
+  resumeAudioAfterSpeak();
   stopSpeakRecognition();
 }
-function beginSpeakSession(){
+function speak(text){
+  if(!save || save.muted || !speechReady || !text) return;
   speakSession++;
-  var gen = speakSession;
+  var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
-  if(_speakDelayTimer){ clearTimeout(_speakDelayTimer); _speakDelayTimer = null; }
-  killCurrentAudio();
-  return gen;
-}
-function speakTTS(text, onEnd, gen){
-  if(!save || save.muted || !speechReady || !text){
-    if(onEnd){ try{ onEnd(); }catch(e){} }
-    return;
-  }
-  if(gen === undefined) gen = speakSession;
+  suspendAudioForSpeak();
   setTimeout(function(){
-    if(gen !== speakSession){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+    if(mySession !== speakSession){ resumeAudioAfterSpeak(); return; }
     try{
       if(!englishVoice) getEnglishVoice();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
+      u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
       var v = getEnglishVoice(); if(v) u.voice = v;
-      var done = false;
-      function fin(){ if(done) return; done = true; _ttsPlaying = false; if(gen !== speakSession) return; if(onEnd){ try{ onEnd(); }catch(e){} } }
-      u.onend = fin;
-      u.onerror = fin;
       _ttsPlaying = true;
+      u.onend = function(){ _ttsPlaying = false; resumeAudioAfterSpeak(); };
+      u.onerror = function(){ _ttsPlaying = false; resumeAudioAfterSpeak(); };
       window.speechSynthesis.speak(u);
-      setTimeout(fin, 15000);
-    }catch(e){ if(onEnd){ try{ onEnd(); }catch(e){} } }
-  }, 60);
+    }catch(e){ _ttsPlaying = false; resumeAudioAfterSpeak(); }
+  }, 100);
 }
-function playYoudao(text, onEnd, allowFallback, gen){
-  if(allowFallback === undefined) allowFallback = true;
-  if(gen === undefined) gen = speakSession;
-  var a = null;
-  try{
-    a = new Audio();
-    a.preload = 'auto';
-    a.setAttribute('playsinline','');
-    a.volume = 1.0;
-  }catch(e){ a = null; }
-  if(!a){
-    if(allowFallback){ speakTTS(text, onEnd, gen); }
-    else if(onEnd){ try{ onEnd(); }catch(e){} }
-    return;
-  }
-  _currentAudio = a;
-  var finished = false;
-  var wentTTS = false;
-  function finish(){
-    if(finished) return;
-    finished = true;
-    if(_currentAudio === a) _currentAudio = null;
+function speakOnce(text, onEnd, sessionId){
+  if(!save || save.muted || !speechReady || !text){ if(onEnd) onEnd(); return; }
+  if(sessionId !== undefined && sessionId !== speakSession){ if(onEnd) onEnd(); return; }
+  suspendAudioForSpeak();
+  var ended = false;
+  function finishAll(){
+    if(ended) return;
+    ended = true;
     _ttsPlaying = false;
-    if(gen !== speakSession) return;
-    if(onEnd){ try{ onEnd(); }catch(e){} }
+    resumeAudioAfterSpeak();
+    if(onEnd) onEnd();
   }
-  function goTTS(){
-    if(wentTTS || finished) return;
-    wentTTS = true;
-    try{ a.onended = null; a.onerror = null; }catch(e){}
-    try{ a.pause(); }catch(e){}
-    if(_currentAudio === a) _currentAudio = null;
-    if(gen !== speakSession){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
-    if(!allowFallback){ finish(); return; }
-    speakTTS(text, finish, gen);
-  }
-  a.onended = function(){ if(!finished && !wentTTS) finish(); };
-  a.onerror = function(){ if(!finished && !wentTTS) goTTS(); };
-  var url = YD_TTS_URL + '?audio=' + encodeURIComponent(text) + '&type=' + YD_TTS_TYPE;
-  try{ a.src = url; }catch(e){ goTTS(); return; }
-  _ttsPlaying = true;
-  var p = null;
-  try{ p = a.play(); }catch(e){ p = null; }
-  if(p && typeof p.then === 'function'){
-    p.catch(function(){
-      setTimeout(function(){
-        if(finished || wentTTS) return;
-        if(gen !== speakSession) return;
-        if(!a.paused && a.currentTime > 0.05) return;
-        goTTS();
-      }, 200);
-    });
-  }
-  setTimeout(function(){
-    if(finished || wentTTS) return;
-    if(gen !== speakSession) return;
-    if(a.currentTime <= 0.05){ goTTS(); }
-  }, 2000);
+  try{
+    if(!englishVoice) getEnglishVoice();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.75; u.pitch = 1.0; u.volume = SPEAK_VOL_MULT;
+    var v = getEnglishVoice(); if(v) u.voice = v;
+    u.onend = finishAll; u.onerror = finishAll;
+    setTimeout(finishAll, 15000);
+    if(sessionId !== undefined && sessionId !== speakSession){ return; }
+    _ttsPlaying = true;
+    window.speechSynthesis.speak(u);
+  }catch(e){ finishAll(); }
 }
-function speak(text, onEnd, allowFallback){
-  if(allowFallback === undefined) allowFallback = true;
-  if(!save || save.muted || !text){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
-  var trimmed = String(text).replace(/\s+/g, ' ').trim();
-  if(!trimmed){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
-  var gen = beginSpeakSession();
-  playYoudao(trimmed, onEnd, allowFallback, gen);
-}
-function speakWithDelay(text, allowFallback){
-  if(allowFallback === undefined) allowFallback = true;
+function speakWithDelay(text){
   if(!text) return;
-  var gen = beginSpeakSession();
-  playYoudao(text, function(){
-    if(gen !== speakSession) return;
-    _speakDelayTimer = setTimeout(function(){
-      _speakDelayTimer = null;
-      if(gen !== speakSession) return;
-      playYoudao(text, null, allowFallback, gen);
-    }, 600);
-  }, allowFallback, gen);
+  speakSession++;
+  var mySession = speakSession;
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  speakOnce(text, function(){
+    if(mySession !== speakSession) return;
+    setTimeout(function(){
+      if(mySession !== speakSession) return;
+      speakOnce(text, null, mySession);
+    }, 1500);
+  }, mySession);
 }
 if(speechReady){
   try{
@@ -1676,8 +1674,9 @@ function bgLoop(){
     var nb = bgNebulas[ni];
     var px = nb.x + Math.sin(t*nb.speed + nb.phase)*80;
     var py = nb.y + Math.cos(t*nb.speed + nb.phase*1.3)*60;
-    if(nb.img){ bgCtx.drawImage(nb.img, px - nb.r, py - nb.r); }
-    else {
+    if(nb.img){
+      bgCtx.drawImage(nb.img, px - nb.r, py - nb.r);
+    } else {
       var ng = bgCtx.createRadialGradient(px,py,0,px,py,nb.r);
       ng.addColorStop(0,'hsla(' + nb.hue + ',85%,62%,0.18)');
       ng.addColorStop(0.5,'hsla(' + (nb.hue+40) + ',85%,52%,0.08)');
@@ -1762,12 +1761,21 @@ function showModal(title, desc, onOk, okText, cancelText, swapColors, onCancel){
   safeText($('modal-title'), title); safeText($('modal-desc'), desc);
   var okBtn = $('modal-ok'); var cancelBtn = $('modal-cancel');
   if(!okBtn || !cancelBtn) return;
-  okBtn.style.background = ''; okBtn.style.border = ''; okBtn.style.boxShadow = '';
-  cancelBtn.style.background = ''; cancelBtn.style.border = ''; cancelBtn.style.boxShadow = '';
+  okBtn.style.background = '';
+  okBtn.style.border = '';
+  okBtn.style.boxShadow = '';
+  cancelBtn.style.background = '';
+  cancelBtn.style.border = '';
+  cancelBtn.style.boxShadow = '';
   okBtn.textContent = okText || '确定'; cancelBtn.textContent = cancelText || '取消';
   cancelBtn.style.display = '';
-  if(swapColors){ okBtn.className = 'btn btn-ghost'; cancelBtn.className = 'btn btn-primary'; }
-  else { okBtn.className = 'btn btn-primary'; cancelBtn.className = 'btn btn-ghost'; }
+  if(swapColors){
+    okBtn.className = 'btn btn-ghost';
+    cancelBtn.className = 'btn btn-primary';
+  } else {
+    okBtn.className = 'btn btn-primary';
+    cancelBtn.className = 'btn btn-ghost';
+  }
   mask.classList.add('show');
   var close = function(){ mask.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; cancelBtn.style.display = ''; };
   okBtn.onclick = function(){ close(); if(onOk) onOk(); };
@@ -1775,19 +1783,22 @@ function showModal(title, desc, onOk, okText, cancelText, swapColors, onCancel){
 }
 function showFeedback(kind){
   var el = $('feedback'); if(!el) return;
-  var cls = 'feedback'; var txt = '';
+  var cls = 'feedback';
+  var txt = '';
   if(kind === 'ok'){ cls += ' ok'; txt = '✓'; }
   else if(kind === 'bad'){ cls += ' bad'; txt = '✕'; }
   else if(kind === 'hit'){ cls += ' hit'; txt = '💥'; }
   else { cls += ' ok'; txt = kind; }
-  el.className = cls; el.textContent = txt;
+  el.className = cls;
+  el.textContent = txt;
   void el.offsetWidth; el.classList.add('show');
 }
 function renderStars(targetEl, stars){
   if(!targetEl) return;
   targetEl.innerHTML = '';
+  var total = stars;
   for(var i=0;i<3;i++){
-    var seg = Math.max(0, Math.min(1, stars - i));
+    var seg = Math.max(0, Math.min(1, total - i));
     var span = document.createElement('span'); span.className = 'star-partial';
     var bg = document.createElement('span'); bg.className = 'star-bg'; bg.textContent = '★'; span.appendChild(bg);
     if(seg > 0){
@@ -1801,16 +1812,19 @@ function renderStarsBar(percent, totalStars){
   var pct = Math.max(0, Math.min(100, percent));
   var baseStr = '';
   for(var i=0;i<totalStars;i++) baseStr += '⭐';
-  return '<span class="star-bg">' + baseStr + '</span>' + '<span class="star-top" style="width:' + pct + '%">' + baseStr + '</span>';
+  return '<span class="star-bg">' + baseStr + '</span>' +
+         '<span class="star-top" style="width:' + pct + '%">' + baseStr + '</span>';
 }
 function renderStarRow(accuracy, totalStars){
   var litCount = accuracy * totalStars;
   var html = '';
   for(var i=0;i<totalStars;i++){
     var seg = Math.max(0, Math.min(1, litCount - i));
-    if(seg >= 0.999){ html += '<span class="star-on"></span>'; }
-    else if(seg <= 0.001){ html += '<span class="star-off"></span>'; }
-    else {
+    if(seg >= 0.999){
+      html += '<span class="star-on"></span>';
+    } else if(seg <= 0.001){
+      html += '<span class="star-off"></span>';
+    } else {
       html += '<span class="star-half">'
             +   '<span class="half-bg"></span>'
             +   '<span class="half-clip" style="width:' + (seg * 100) + '%">'
@@ -1831,13 +1845,16 @@ function showFinalVictory(){
     '<div class="congrats-line">通关</div>' +
     '<div class="congrats-line">你是最棒的！</div>';
   document.body.appendChild(wrap);
+
   sfxApplause(); sfxCheer();
   setTimeout(function(){ sfxApplause(); }, 900);
   setTimeout(function(){ sfxCheer(); }, 1600);
   setTimeout(function(){ sfxApplause(); }, 2400);
+
   var hue0 = Math.floor(Math.random()*360);
   explode(window.innerWidth/2, window.innerHeight*0.35, 'hsl('+hue0+',95%,65%)', 60);
   sfxFirework();
+
   var fwTimer = setInterval(function(){
     var x = Math.random()*window.innerWidth;
     var y = Math.random()*window.innerHeight*0.6 + window.innerHeight*0.08;
@@ -1845,6 +1862,7 @@ function showFinalVictory(){
     explode(x, y, 'hsl('+hue+',95%,65%)', 50);
     sfxFirework();
   }, 350);
+
   var confColors = ['#fbbf24','#f472b6','#a855f7','#60a5fa','#22c55e','#ef4444','#f59e0b','#ec4899','#f97316','#06b6d4','#84cc16','#ff1744','#ffea00','#00e5ff'];
   var confTimer = setInterval(function(){
     for(var ci=0;ci<11;ci++){
@@ -1862,6 +1880,7 @@ function showFinalVictory(){
       })();
     }
   }, 160);
+
   setTimeout(function(){
     clearInterval(fwTimer);
     clearInterval(confTimer);
@@ -1952,22 +1971,33 @@ function renderMap(){
               if(key.indexOf(pid + '_L') === 0){ hasPlayed = true; break; }
             }
           }
-          if(!hasPlayed){ startUnit(u, 0, uIdx); return; }
+          if(!hasPlayed){
+            startUnit(u, 0, uIdx);
+            return;
+          }
           var nxtLv = getNextLevelForUnit(u);
           showModal('选择模式', '继续上次进度，还是重新开始本单元？',
             function(){
               if(nxtLv < 3) startUnit(u, nxtLv, uIdx);
               else if(nxtLv === 3){
                 if(isBossUnlocked(u)) startBoss(u, uIdx);
-                else { showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false, function(){ restartUnit(uIdx); }); }
+                else {
+                  showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false,
+                    function(){ restartUnit(uIdx); });
+                }
               }
             },
             '继续游戏', '重新游戏', false,
             function(){
               showModal('确认重新开始？', '是否清除本单元所有测试记录？',
-                function(){ restartUnit(uIdx); },
+                function(){
+                  restartUnit(uIdx);
+                },
                 '确认', '取消', false,
-                function(){ showScreen('s-map'); renderMap(); }
+                function(){
+                  showScreen('s-map');
+                  renderMap();
+                }
               );
             }
           );
@@ -1984,12 +2014,18 @@ function renderMap(){
       var handleBossClick = function(e){
         if(e){ e.stopPropagation(); if(e.preventDefault) e.preventDefault(); }
         sfxClick();
-        if(isBossUnlocked(u)){ startBoss(u, uIdx); }
-        else { showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false, function(){ restartUnit(uIdx); }); }
+        if(isBossUnlocked(u)){
+          startBoss(u, uIdx);
+        } else {
+          showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false,
+            function(){ restartUnit(uIdx); });
+        }
       };
       wrap.onclick = handleBossClick;
       var kids = wrap.querySelectorAll('*');
-      for(var ki=0; ki<kids.length; ki++){ kids[ki].onclick = handleBossClick; }
+      for(var ki=0; ki<kids.length; ki++){
+        kids[ki].onclick = handleBossClick;
+      }
     })(wraps[wi]);
   }
   var allCleared = true;
@@ -2003,7 +2039,9 @@ function renderMap(){
   for(var i2=0;i2<3;i2++){ finalStars += (fs[i2] || 0); }
   var finalPct = finalStars / 9;
   var finalStarBar = '';
-  if(finalUnlocked){ finalStarBar = '<div class="planet-stars">' + renderStarsBar(finalPct * 100, 3) + '</div>'; }
+  if(finalUnlocked){
+    finalStarBar = '<div class="planet-stars">' + renderStarsBar(finalPct * 100, 3) + '</div>';
+  }
   fc.innerHTML =
     '<div class="planet-icon">' + (finalUnlocked ? '🌟' : '🔒') + '</div>' +
     '<div class="planet-info">' +
@@ -2128,10 +2166,9 @@ function renderQuestion(){
     else if(q.t==='listen'){
       addLabel('听力题', qb); addPrompt(q.q, qb);
       var btn = document.createElement('button'); btn.className='listen-btn'; btn.textContent='🔊';
-      btn.onclick = function(){ speak(q.word, null, true); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
+      btn.onclick = function(){ speak(q.word); var r = btn.getBoundingClientRect(); sparkle(r.left + r.width/2, r.top + r.height/2, '#a855f7', 16); };
       qb.appendChild(btn); renderOptions(q, q.o, qb); unlockSpeech();
-      /* 听力题自动播放：只播一次 */
-      speak(q.word, null, true);
+      setTimeout(function(){ speakWithDelay(q.word); }, 1000);
     }
     else if(q.t==='spell') renderSpell(q, qb);
     else if(q.t==='order') renderOrder(q, qb);
@@ -2213,7 +2250,9 @@ function renderSpell(q, qb){
       var otherWord = unit.vocab[i][0];
       if(otherWord === q.word) continue;
       var cleanOther = otherWord.replace(/[.,!?;:'’\s]/g, '');
-      for(var j=0;j<cleanOther.length;j++){ allLetters.push(cleanOther.charAt(j).toLowerCase()); }
+      for(var j=0;j<cleanOther.length;j++){
+        allLetters.push(cleanOther.charAt(j).toLowerCase());
+      }
     }
     allLetters = shuffleArray(allLetters);
     var exCount = Math.max(2, Math.min(3, Math.floor(letterCount/3)));
@@ -2245,13 +2284,15 @@ function renderSpell(q, qb){
           setTimeout(function(){
             if(ansStr === targetStr){
               correctFlow();
+              var _spellSession = speakSession;
               var _spellJumped = false;
               var _spellJump = function(){
                 if(_spellJumped) return;
+                if(speakSession !== _spellSession) return;
                 _spellJumped = true;
                 setTimeout(nextQuestion, 300);
               };
-              speak(q.word, _spellJump, true);
+              speakOnce(q.word, _spellJump, _spellSession);
               setTimeout(_spellJump, 9000);
             }
             else {
@@ -2352,7 +2393,6 @@ function renderSpeak(q, qb){
   var tip = document.createElement('div'); tip.className = 'speak-tip'; tip.textContent = '';
   var doneBtn = document.createElement('button');
   doneBtn.className = 'btn btn-primary'; doneBtn.style.marginTop = '18px'; doneBtn.textContent = '✓ 我读好了';
-
   qb.appendChild(status); qb.appendChild(sent); qb.appendChild(btnRow); qb.appendChild(tip); qb.appendChild(doneBtn);
 
   var spkPlayingTimer = null;
@@ -2368,13 +2408,13 @@ function renderSpeak(q, qb){
     void spkBtn.offsetWidth;
     spkBtn.classList.add('playing');
     spkPlayingTimer = setTimeout(stopSpkAnim, 15000);
-    speak(q.sentence, stopSpkAnim, true);
+    speak(q.sentence);
     var r = spkBtn.getBoundingClientRect();
     sparkle(r.left + r.width/2, r.top + r.height/2, '#60a5fa', 16);
   };
 
   unlockSpeech();
-  speakWithDelay(q.sentence);
+  setTimeout(function(){ speak(q.sentence); }, 1000);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
@@ -2419,7 +2459,9 @@ function renderSpeak(q, qb){
       rec.onresult = function(e){
         if(!isRecording || currentRec !== rec) return;
         var text = '';
-        for(var i=0; i<e.results.length; i++){ text += e.results[i][0].transcript; }
+        for(var i=0; i<e.results.length; i++){
+          text += e.results[i][0].transcript;
+        }
         accumulatedText = text.trim();
       };
 
@@ -2449,16 +2491,15 @@ function renderSpeak(q, qb){
   function startRecording(){
     if(!micAvailable) return;
     stopRecording();
-    if(audioCtx && audioCtx.state === 'running'){ try{ audioCtx.suspend(); }catch(e){} }
+    if(audioCtx && audioCtx.state === 'running'){
+      try{ audioCtx.suspend(); }catch(e){}
+    }
     accumulatedText = '';
     hasRecorded = true;
     isRecording = true;
-    stopSpkAnim();
     speakSession++;
     _ttsPlaying = false;
     try{ window.speechSynthesis.cancel(); }catch(e){}
-    if(_speakDelayTimer){ clearTimeout(_speakDelayTimer); _speakDelayTimer = null; }
-    killCurrentAudio();
     status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
     tip.textContent = '';
 
@@ -2490,7 +2531,6 @@ function renderSpeak(q, qb){
       status.textContent = '录音已停止，点麦克风可重新开始';
       return;
     }
-    unlockSpeech();
     startRecording();
   };
 
@@ -2503,7 +2543,9 @@ function renderSpeak(q, qb){
       setTimeout(nextQuestion, 1000);
       return;
     }
-    if(isRecording){ stopRecording(); }
+    if(isRecording){
+      stopRecording();
+    }
     if(!hasRecorded){
       status.textContent = '请先点麦克风开始朗读';
       tip.textContent = '';
@@ -2523,8 +2565,13 @@ function renderSpeak(q, qb){
       finished = true;
       status.textContent = '✓ 读得不错！';
       tip.textContent = '';
-      if(audioCtx && audioCtx.state !== 'running'){ try{ audioCtx.resume(); }catch(e){} }
-      setTimeout(function(){ correctFlow(); setTimeout(nextQuestion, 1000); }, 250);
+      if(audioCtx && audioCtx.state !== 'running'){
+        try{ audioCtx.resume(); }catch(e){}
+      }
+      setTimeout(function(){
+        correctFlow();
+        setTimeout(nextQuestion, 1000);
+      }, 250);
     } else {
       status.textContent = '再读一遍～';
       tip.textContent = '点麦克风重新朗读';
@@ -2580,6 +2627,7 @@ function endLevel(){
     stopTimer();
     var total = G.qs.length;
     var correctCount = G.correct;
+    var wrong = G.wrongCount;
     var stars = Math.round((correctCount / total) * 3 * 10) / 10;
     var pid = 'u' + G.unit.id;
     if(!save.stars[pid]) save.stars[pid] = {};
@@ -2600,7 +2648,10 @@ function endLevel(){
     for(var i=0;i<3;i++){ if(save.stars[pid] === undefined || save.stars[pid][i] === undefined){ allDone = false; break; } }
     if(save.stars[pid] === undefined || save.stars[pid]['boss'] === undefined) allDone = false;
     var planetCleared = false;
-    if(allDone && save.cleared.indexOf(pid) === -1){ save.cleared.push(pid); planetCleared = true; checkAllClearedForFinal(); }
+    if(allDone && save.cleared.indexOf(pid) === -1){ 
+      save.cleared.push(pid); planetCleared = true;
+      checkAllClearedForFinal();
+    }
     checkUnlockByAccuracy(unit);
     if(stars === 3){ save.streak = (save.streak||0) + 1; if(save.streak >= 3 && save.badges.indexOf('streak3') === -1){ save.badges.push('streak3'); showToast('🏅 徽章：连续三星达人！', 3000); } } else save.streak = 0;
     save.maxStreak = Math.max(save.maxStreak||0, save.streak||0);
@@ -2629,7 +2680,9 @@ function endLevel(){
     } else if(stars >= 2.9){
       sfxBadge();
       for(var fi2=0;fi2<4;fi2++){ (function(idx){ setTimeout(function(){ sparkle(Math.random()*W, Math.random()*H*0.6, '#fbbf24', 24); }, idx*150); })(fi2); }
-    } else { sfxLevelUp(); }
+    } else {
+      sfxLevelUp();
+    }
   }catch(e){ showFatalError('endLevel: ' + e.message); }
 }
 function startBoss(u, uIdx){
@@ -2653,7 +2706,10 @@ function startBoss(u, uIdx){
 }
 function initBossScreen(boss, isFinal){
   var heads = $('boss-heads');
-  if(heads){ if(isFinal) heads.classList.add('triple'); else heads.classList.remove('triple'); }
+  if(heads){
+    if(isFinal) heads.classList.add('triple');
+    else heads.classList.remove('triple');
+  }
   safeText($('boss-avatar'), boss.icon);
   safeText($('boss-head-left'), boss.icon);
   safeText($('boss-head-right'), boss.icon);
@@ -2729,7 +2785,7 @@ function renderBossQuestion(){
         optBox.appendChild(b);
       })(oi);
     }
-    if(q.t === 'listen' && q.word){ unlockSpeech(); speak(q.word, null, true); }
+    if(q.t === 'listen' && q.word){ unlockSpeech(); speakWithDelay(q.word); }
     if(G.isFinalBoss) renderBossShop();
   }catch(e){ showFatalError('renderBossQuestion: ' + e.message); }
 }
@@ -2898,7 +2954,9 @@ function throwItemAtBoss(item, callback){
     }, 300);
   } else {
     el.style.transition = 'transform .3s ease-out, opacity .2s';
-    requestAnimationFrame(function(){ el.style.transform = 'translate(-50%,-50%) scale(1.8) rotate(-15deg)'; });
+    requestAnimationFrame(function(){
+      el.style.transform = 'translate(-50%,-50%) scale(1.8) rotate(-15deg)';
+    });
     setTimeout(function(){
       el.style.transition = 'transform .4s cubic-bezier(.3,.1,.7,1.3), opacity .2s';
       el.style.transform = 'translate(' + (cx - startX) + 'px,' + (cy - startY) + 'px) translate(-50%,-50%) scale(2.6) rotate(25deg)';
@@ -2995,7 +3053,10 @@ function endBoss(win){
       var unit = G.unit; var allDone = true;
       for(var i=0;i<3;i++){ if(save.stars['u'+unit.id] === undefined || save.stars['u'+unit.id][i] === undefined){ allDone = false; break; } }
       if(save.stars['u'+unit.id] === undefined || save.stars['u'+unit.id]['boss'] === undefined) allDone = false;
-      if(allDone && save.cleared.indexOf(pid) === -1){ save.cleared.push(pid); checkAllClearedForFinal(); }
+      if(allDone && save.cleared.indexOf(pid) === -1){ 
+        save.cleared.push(pid);
+        checkAllClearedForFinal();
+      }
       checkUnlockByAccuracy(unit);
     }
     persistNow();
@@ -3019,10 +3080,14 @@ function endBoss(win){
     showScreen('s-result');
     if(win){
       if(G.isFinal){ sfxBossWin(); setTimeout(showFinalVictory, 400); }
-      else {
-        sfxBossWin();
-        if(correct === totalQ){ celebrateHigh(); G.showCongratsAfterContinue = true; }
-        else { for(var fi=0;fi<6;fi++){ (function(idx){ setTimeout(function(){ sparkle(Math.random()*W, Math.random()*H*0.5, '#fbbf24', 28); }, idx*120); })(fi); } }
+      else { 
+        sfxBossWin(); 
+        if(correct === totalQ){
+          celebrateHigh();
+          G.showCongratsAfterContinue = true;
+        } else {
+          for(var fi=0;fi<6;fi++){ (function(idx){ setTimeout(function(){ sparkle(Math.random()*W, Math.random()*H*0.5, '#fbbf24', 28); }, idx*120); })(fi); } 
+        }
       }
     } else { sfxBossLose(); screenShake(3); screenFlash('red'); }
   }catch(e){ showFatalError('endBoss: ' + e.message); }
@@ -3059,7 +3124,8 @@ function bindEvents(){
   bind('btn-reset', function(){
     sfxClick();
     showModal('重置进度？','所有星星、金币、徽章都会清空，且无法恢复。',
-      null, '取消', '重置', true,
+      null,
+      '取消', '重置', true,
       function(){
         showModal('真的要重置吗？','这是最后确认，重置后无法撤销。', function(){
           try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
@@ -3078,12 +3144,18 @@ function bindEvents(){
     );
   });
   bind('btn-quit', function(){
-    sfxClick(); cancelSpeech();
-    showModal('退出关卡？','当前进度会保存。', function(){ stopTimer(); persistNow(); renderHome(); showScreen('s-home'); }, '退出', '继续', true);
+    sfxClick();
+    cancelSpeech();
+    showModal('退出关卡？','当前进度会保存。', function(){
+      stopTimer(); persistNow(); renderHome(); showScreen('s-home');
+    }, '退出', '继续', true);
   });
   bind('btn-boss-quit', function(){
-    sfxClick(); cancelSpeech();
-    showModal('退出 BOSS 战？','本关进度不会保留。', function(){ stopBossTimer(); persistNow(); renderHome(); showScreen('s-home'); }, '退出', '继续', true);
+    sfxClick();
+    cancelSpeech();
+    showModal('退出 BOSS 战？','本关进度不会保留。', function(){
+      stopBossTimer(); persistNow(); renderHome(); showScreen('s-home');
+    }, '退出', '继续', true);
   });
   bind('btn-boss-shop-toggle', function(){ sfxClick(); var shop = $('boss-shop'); if(!shop) return; G.bossShopOpen = !G.bossShopOpen; shop.classList.toggle('show', G.bossShopOpen); if(G.bossShopOpen) renderBossShop(); });
   bind('btn-boss-shop-close', function(){ sfxClick(); var shop = $('boss-shop'); if(shop) shop.classList.remove('show'); G.bossShopOpen = false; });
@@ -3091,10 +3163,10 @@ function bindEvents(){
     sfxClick();
     var needCongrats = G.showCongratsAfterContinue;
     G.showCongratsAfterContinue = false;
-    if(G.isFinal || (G.unit && G.levelIdx === -1)){
-      showScreen('s-map'); renderMap();
+    if(G.isFinal || (G.unit && G.levelIdx === -1)){ 
+      showScreen('s-map'); renderMap(); 
       if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); }
-      return;
+      return; 
     }
     var u = G.unit; var uIdx = 0;
     for(var k=0;k<UNIT_DATA.length;k++){ if(UNIT_DATA[k].id === u.id) uIdx = k; }
@@ -3102,9 +3174,13 @@ function bindEvents(){
     if(u && nextLv < 3){ startUnit(u, nextLv, uIdx); }
     else if(u && nextLv === 3){
       if(isBossUnlocked(u)) startBoss(u, uIdx);
-      else { showScreen('s-map'); renderMap(); if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); } }
-    } else {
-      showScreen('s-map'); renderMap();
+      else { 
+        showScreen('s-map'); renderMap(); 
+        if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); }
+      }
+    }
+    else { 
+      showScreen('s-map'); renderMap(); 
       if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); }
     }
   });
@@ -3136,16 +3212,19 @@ function init(){
       initAudio();
       unlockSpeech();
       if(_ttsPlaying) return;
-      if(audioCtx && audioCtx.state !== 'running'){ try{ audioCtx.resume(); }catch(e){} }
+      if(_audioCtxSuspendedBySpeak) return;
+      if(audioCtx && audioCtx.state !== 'running'){
+        try{ audioCtx.resume(); }catch(e){}
+      }
     };
     document.addEventListener('touchstart', keepAudioAlive, {passive:true});
     document.addEventListener('mousedown', keepAudioAlive);
     document.addEventListener('click', keepAudioAlive);
-    document.addEventListener('visibilitychange', function(){
-      if(document.hidden){ bgPaused = true; persistNow(); cancelSpeech(); }
+    document.addEventListener('visibilitychange', function(){ 
+      if(document.hidden){ bgPaused = true; persistNow(); }
       else { bgPaused = false; ensureAudioRunning(); }
     });
-    window.addEventListener('pagehide', function(){ bgPaused = true; persistNow(); cancelSpeech(); });
+    window.addEventListener('pagehide', function(){ bgPaused = true; persistNow(); });
     window.addEventListener('pageshow', function(){ bgPaused = false; ensureAudioRunning(); });
     window.addEventListener('beforeunload', persistNow);
     bgLoop(); fxLoop();
