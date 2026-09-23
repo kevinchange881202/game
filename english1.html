@@ -413,6 +413,7 @@ var SFX_VOL_MULT = 2.0;
 var SPEAK_VOL_MULT = 1.5;
 var _speakRecStopFn = null;
 var _ttsPlaying = false;
+var _netSrc = null;
 function stopSpeakRecognition(){
   if(_speakRecStopFn){ try{ _speakRecStopFn(); }catch(e){} _speakRecStopFn = null; }
 }
@@ -1523,54 +1524,99 @@ var speakSession = 0;
 function cancelSpeech(){
   speakSession++;
   _ttsPlaying = false;
+  if(_netSrc){ try{ _netSrc.stop(); }catch(e){} _netSrc = null; }
   try{ window.speechSynthesis.cancel(); }catch(e){}
   stopSpeakRecognition();
 }
-function speak(text){
-  if(!save || save.muted || !speechReady || !text) return;
-  speakSession++;
+function speakNet(text, onEnd){
+  if(!save || save.muted || !text){ if(onEnd) onEnd(); return; }
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
+  if(_netSrc){ try{ _netSrc.stop(); }catch(e){} _netSrc = null; }
   _ttsPlaying = true;
-  try{
-    if(!englishVoice) getEnglishVoice();
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
-    var v = getEnglishVoice(); if(v) u.voice = v;
-    u.onend = function(){ _ttsPlaying = false; };
-    u.onerror = function(){ _ttsPlaying = false; };
-    window.speechSynthesis.speak(u);
-  }catch(e){ _ttsPlaying = false; }
+  fetch('https://edge-tts.kevinc881202.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text, voice: 'en-US-AriaNeural' })
+  }).then(function(r){
+    if(!r.ok) throw new Error('net ' + r.status);
+    return r.arrayBuffer();
+  }).then(function(buf){
+    if(mySession !== speakSession) return;
+    initAudio();
+    function play(){
+      audioCtx.decodeAudioData(buf, function(decoded){
+        if(mySession !== speakSession) return;
+        try{
+          var src = audioCtx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(audioCtx.destination);
+          _netSrc = src;
+          var ended = false;
+          function fireEnd(){
+            if(ended) return; ended = true;
+            _ttsPlaying = false;
+            if(_netSrc === src) _netSrc = null;
+            if(onEnd) onEnd();
+          }
+          src.onended = fireEnd;
+          setTimeout(fireEnd, 15000);
+          src.start(0);
+        }catch(e){ _ttsPlaying = false; fallbackSpeak(text, onEnd, mySession); }
+      }, function(){
+        _ttsPlaying = false;
+        fallbackSpeak(text, onEnd, mySession);
+      });
+    }
+    if(audioCtx.state === 'suspended' || audioCtx.state === 'interrupted'){
+      audioCtx.resume().then(play).catch(play);
+    } else {
+      play();
+    }
+  }).catch(function(){
+    _ttsPlaying = false;
+    fallbackSpeak(text, onEnd, mySession);
+  });
 }
-function speakOnce(text, onEnd, sessionId){
+function fallbackSpeak(text, onEnd, sessionId){
   if(!save || save.muted || !speechReady || !text){ if(onEnd) onEnd(); return; }
   if(sessionId !== undefined && sessionId !== speakSession){ if(onEnd) onEnd(); return; }
   try{
     if(!englishVoice) getEnglishVoice();
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
+    u.lang = 'en-US'; u.rate = 0.5; u.pitch = 1.05; u.volume = 1.0;
     var v = getEnglishVoice(); if(v) u.voice = v;
     var ended = false;
     function fireEnd(){ if(ended) return; ended = true; _ttsPlaying = false; if(onEnd) onEnd(); }
     u.onend = fireEnd; u.onerror = fireEnd; setTimeout(fireEnd, 15000);
-    if(sessionId !== undefined && sessionId !== speakSession) return;
     _ttsPlaying = true;
     window.speechSynthesis.speak(u);
   }catch(e){ _ttsPlaying = false; if(onEnd) onEnd(); }
+}
+function speak(text){
+  if(!save || save.muted || !text) return;
+  speakSession++;
+  speakNet(text, null);
+}
+function speakOnce(text, onEnd, sessionId){
+  if(!save || save.muted || !text){ if(onEnd) onEnd(); return; }
+  if(sessionId !== undefined && sessionId !== speakSession){ if(onEnd) onEnd(); return; }
+  fallbackSpeak(text, onEnd, sessionId);
 }
 function speakWithDelay(text){
   if(!text) return;
   speakSession++;
   var mySession = speakSession;
   try{ window.speechSynthesis.cancel(); }catch(e){}
+  if(_netSrc){ try{ _netSrc.stop(); }catch(e){} _netSrc = null; }
   _ttsPlaying = true;
-  speakOnce(text, function(){
+  speakNet(text, function(){
     if(mySession !== speakSession) return;
     setTimeout(function(){
       if(mySession !== speakSession) return;
-      speakOnce(text, null, mySession);
+      speakNet(text, null);
     }, 600);
-  }, mySession);
+  });
 }
 if(speechReady){
   try{
@@ -2407,14 +2453,12 @@ function renderSpeak(q, qb){
   function startRecording(){
     if(!micAvailable) return;
     stopRecording();
-    if(audioCtx && audioCtx.state === 'running'){
-      try{ audioCtx.suspend(); }catch(e){}
-    }
     accumulatedText = '';
     hasRecorded = true;
     isRecording = true;
     speakSession++;
     _ttsPlaying = false;
+    if(_netSrc){ try{ _netSrc.stop(); }catch(e){} _netSrc = null; }
     try{ window.speechSynthesis.cancel(); }catch(e){}
     status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
     tip.textContent = '';
@@ -2481,9 +2525,6 @@ function renderSpeak(q, qb){
       finished = true;
       status.textContent = '✓ 读得不错！';
       tip.textContent = '';
-      if(audioCtx && audioCtx.state !== 'running'){
-        try{ audioCtx.resume(); }catch(e){}
-      }
       setTimeout(function(){
         correctFlow();
         setTimeout(nextQuestion, 1000);
