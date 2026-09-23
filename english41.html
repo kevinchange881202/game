@@ -410,6 +410,7 @@ var SAVE_KEY = 'star_english_v36';
 var COOKIE_KEY = 'star_english_mini_v36';
 var save = null;
 var audioCtx = null, audioReady = false;
+var speechReady = false, speechUnlocked = false, englishVoice = null;
 var bgCanvas = null, bgCtx = null, fxCanvas = null, fxCtx = null;
 var W = 0, H = 0, DPR = 1;
 var bgStars = [], bgNebulas = [], bgShoots = [];
@@ -423,171 +424,9 @@ var SFX_VOL_MULT = 2.0;
 var SPEAK_VOL_MULT = 1.5;
 var _speakRecStopFn = null;
 var _ttsPlaying = false;
-
-/* ==================================================================
-   ★★★ 语音引擎：有道词典发音（无需 Key，直接可用）★★★
-   YD_TTS_TYPE = 1 → 英式发音   2 → 美式发音
-   ================================================================== */
-var YD_TTS_TYPE = 1;   /* ★ 已改为英式发音 */
-var YD_TTS_URL = 'https://dict.youdao.com/dictvoice';
-var SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-var speechReady = true;
-var speechUnlocked = false;
-var _ydAudio = null;
 var _ydToken = 0;
-var speakSession = 0;
-
-function getYdAudio(){
-  if(!_ydAudio){
-    try{
-      _ydAudio = new Audio();
-      _ydAudio.preload = 'auto';
-      _ydAudio.setAttribute('playsinline','');
-      _ydAudio.volume = 1.0;
-    }catch(e){ _ydAudio = null; }
-  }
-  return _ydAudio;
-}
-
-/* 用真正的播放音频元素做静音解锁 */
-function unlockSpeech(){
-  if(speechUnlocked) return;
-  speechUnlocked = true;
-  try{
-    var a = getYdAudio();
-    if(!a) return;
-    a.volume = 0.001;
-    a.src = SILENT_WAV;
-    var p = a.play();
-    if(p && typeof p.catch === 'function') p.catch(function(){});
-    setTimeout(function(){
-      try{
-        a.pause();
-        a.currentTime = 0;
-        a.volume = 1.0;
-      }catch(e){}
-    }, 80);
-  }catch(e){}
-}
-
-function stopYoudaoAudio(){
-  if(_ydAudio){
-    try{
-      _ydAudio.onended = null;
-      _ydAudio.onerror = null;
-      _ydAudio.pause();
-      _ydAudio.removeAttribute('src');
-      _ydAudio.load();
-    }catch(e){}
-  }
-  _ttsPlaying = false;
-}
-
-function fallbackSpeak(text, onDone){
-  var called = false;
-  function fin(){ if(called) return; called = true; if(onDone) onDone(); }
-  try{
-    if(!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)){ fin(); return; }
-    window.speechSynthesis.cancel();
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-GB'; u.rate = 0.85; u.pitch = 1.05; u.volume = 1.0;
-    u.onend = fin; u.onerror = fin;
-    window.speechSynthesis.speak(u);
-    setTimeout(fin, 10000);
-  }catch(e){ fin(); }
-}
-
-function playYoudao(text, token, onEnd){
-  if(!text){ if(onEnd) onEnd(); return; }
-  if(token !== _ydToken){ if(onEnd) onEnd(); return; }
-  var a = getYdAudio();
-  if(!a){ fallbackSpeak(text, onEnd); return; }
-
-  try{
-    a.onended = null;
-    a.onerror = null;
-    a.pause();
-  }catch(e){}
-
-  var finished = false;
-  function finish(){
-    if(finished) return;
-    finished = true;
-    if(token !== _ydToken) return;
-    _ttsPlaying = false;
-    if(onEnd) onEnd();
-  }
-
-  a.onended = finish;
-  a.onerror = function(){
-    if(token !== _ydToken){ finish(); return; }
-    fallbackSpeak(text, finish);
-  };
-
-  var url = YD_TTS_URL + '?audio=' + encodeURIComponent(text) + '&type=' + YD_TTS_TYPE;
-  try{ a.src = url; }catch(e){ finish(); return; }
-
-  _ttsPlaying = true;
-  var p = null;
-  try{ p = a.play(); }catch(e){ p = null; }
-  if(p && typeof p.then === 'function'){
-    p.catch(function(){
-      if(token !== _ydToken) return;
-      fallbackSpeak(text, finish);
-    });
-  }
-  setTimeout(finish, 12000);
-}
-
-function cancelSpeech(){
-  speakSession++;
-  _ydToken++;
-  stopYoudaoAudio();
-  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
-  stopSpeakRecognition();
-}
-
-/* 读一次（可选 onEnd 回调，用来精确结束动画） */
-function speak(text, onEnd){
-  if(!save || save.muted || !text){
-    if(onEnd){ try{ onEnd(); }catch(e){} }
-    return;
-  }
-  _ydToken++;
-  var myToken = _ydToken;
-  stopYoudaoAudio();
-  var ended = false;
-  function safeEnd(){
-    if(ended) return;
-    ended = true;
-    if(onEnd){ try{ onEnd(); }catch(e){} }
-  }
-  setTimeout(function(){
-    if(myToken !== _ydToken){ safeEnd(); return; }
-    playYoudao(text, myToken, safeEnd);
-  }, 40);
-  /* 兜底：无论如何 9 秒后清掉回调 */
-  setTimeout(safeEnd, 9000);
-}
-
-/* 读两次（听力用），两次之间留 700ms */
-function speakWithDelay(text){
-  if(!text) return;
-  _ydToken++;
-  var myToken = _ydToken;
-  stopYoudaoAudio();
-  setTimeout(function(){
-    if(myToken !== _ydToken) return;
-    playYoudao(text, myToken, function(){
-      if(myToken !== _ydToken) return;
-      setTimeout(function(){
-        if(myToken !== _ydToken) return;
-        playYoudao(text, myToken, null);
-      }, 700);
-    });
-  }, 40);
-}
-/* ================= 语音引擎结束 ================= */
+var YD_TTS_TYPE = 1;
+var YD_TTS_URL = 'https://dict.youdao.com/dictvoice';
 
 function stopSpeakRecognition(){
   if(_speakRecStopFn){ try{ _speakRecStopFn(); }catch(e){} _speakRecStopFn = null; }
@@ -649,6 +488,7 @@ var G = {
   isFinalBoss:false, bossShopOpen:false, bossSpentCoins:0,
   showCongratsAfterContinue:false
 };
+try{ speechReady = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window); }catch(e){}
 
 function $(id){ return document.getElementById(id); }
 function safeText(el, txt){ if(el) el.textContent = txt; }
@@ -1502,19 +1342,19 @@ function restartUnit(uIdx){
   persistNow();
   startUnit(u, 0, uIdx);
 }
-function initAudio(){
-  if(audioReady) return;
-  try{
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if(AC){
-      audioCtx = new AC();
-      audioReady = true;
+function initAudio(){ 
+  if(audioReady) return; 
+  try{ 
+    var AC = window.AudioContext || window.webkitAudioContext; 
+    if(AC){ 
+      audioCtx = new AC(); 
+      audioReady = true; 
       audioCtx.onstatechange = function(){
         if(audioCtx && (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted')){
           setTimeout(function(){ ensureAudioRunning(); }, 60);
         }
       };
-    }
+    } 
   }catch(e){}
 }
 function tone(f, d, t, v, delay){
@@ -1534,60 +1374,14 @@ function tone(f, d, t, v, delay){
     }catch(e){}
   });
 }
-function sfxClick(){
-  initAudio();
-  withAudioReady(function(){ tone(660,0.05,'sine',0.06); });
-}
-function sfxPick(){
-  initAudio();
-  withAudioReady(function(){
-    tone(784,0.06,'sine',0.08);
-    tone(1047,0.09,'sine',0.08,0.05);
-  });
-}
-function sfxUnpick(){
-  initAudio();
-  withAudioReady(function(){
-    tone(1047,0.06,'sine',0.08);
-    tone(784,0.09,'sine',0.08,0.05);
-  });
-}
-function sfxCorrect(){
-  initAudio();
-  withAudioReady(function(){
-    tone(523,0.1,'sine',0.09);
-    tone(659,0.1,'sine',0.09,0.09);
-    tone(784,0.2,'sine',0.1,0.18);
-  });
-}
-function sfxWrong(){
-  initAudio();
-  withAudioReady(function(){
-    tone(300,0.14,'sine',0.07);
-    tone(220,0.24,'sine',0.07,0.12);
-  });
-}
-function sfxCoin(){
-  initAudio();
-  withAudioReady(function(){
-    tone(1400,0.05,'sine',0.06);
-    tone(1900,0.1,'sine',0.06,0.04);
-  });
-}
-function sfxLevelUp(){
-  initAudio();
-  withAudioReady(function(){
-    var n=[523,659,784,1047];
-    for(var i=0;i<n.length;i++) tone(n[i],0.18,'triangle',0.09,i*0.1);
-  });
-}
-function sfxBadge(){
-  initAudio();
-  withAudioReady(function(){
-    var n=[784,988,1175,1568];
-    for(var i=0;i<n.length;i++) tone(n[i],0.22,'triangle',0.1,i*0.12);
-  });
-}
+function sfxClick(){ initAudio(); withAudioReady(function(){ tone(660,0.05,'sine',0.06); }); }
+function sfxPick(){ initAudio(); withAudioReady(function(){ tone(784,0.06,'sine',0.08); tone(1047,0.09,'sine',0.08,0.05); }); }
+function sfxUnpick(){ initAudio(); withAudioReady(function(){ tone(1047,0.06,'sine',0.08); tone(784,0.09,'sine',0.08,0.05); }); }
+function sfxCorrect(){ initAudio(); withAudioReady(function(){ tone(523,0.1,'sine',0.09); tone(659,0.1,'sine',0.09,0.09); tone(784,0.2,'sine',0.1,0.18); }); }
+function sfxWrong(){ initAudio(); withAudioReady(function(){ tone(300,0.14,'sine',0.07); tone(220,0.24,'sine',0.07,0.12); }); }
+function sfxCoin(){ initAudio(); withAudioReady(function(){ tone(1400,0.05,'sine',0.06); tone(1900,0.1,'sine',0.06,0.04); }); }
+function sfxLevelUp(){ initAudio(); withAudioReady(function(){ var n=[523,659,784,1047]; for(var i=0;i<n.length;i++) tone(n[i],0.18,'triangle',0.09,i*0.1); }); }
+function sfxBadge(){ initAudio(); withAudioReady(function(){ var n=[784,988,1175,1568]; for(var i=0;i<n.length;i++) tone(n[i],0.22,'triangle',0.1,i*0.12); }); }
 function sfxHit(base){
   initAudio();
   if(!audioCtx || (save && save.muted)) return;
@@ -1607,20 +1401,8 @@ function sfxHit(base){
     }catch(e){}
   });
 }
-function sfxBossWin(){
-  initAudio();
-  withAudioReady(function(){
-    var n = [523,659,784,1047,1319,1568,2093];
-    for(var i=0;i<n.length;i++) tone(n[i],0.24,'triangle',0.12,i*0.11);
-  });
-}
-function sfxBossLose(){
-  initAudio();
-  withAudioReady(function(){
-    var n = [400,350,300,220,180];
-    for(var i=0;i<n.length;i++) tone(n[i],0.24,'sawtooth',0.09,i*0.15);
-  });
-}
+function sfxBossWin(){ initAudio(); withAudioReady(function(){ var n = [523,659,784,1047,1319,1568,2093]; for(var i=0;i<n.length;i++) tone(n[i],0.24,'triangle',0.12,i*0.11); }); }
+function sfxBossLose(){ initAudio(); withAudioReady(function(){ var n = [400,350,300,220,180]; for(var i=0;i<n.length;i++) tone(n[i],0.24,'sawtooth',0.09,i*0.15); }); }
 function sfxFirework(){
   initAudio();
   if(!audioCtx || (save && save.muted)) return;
@@ -1668,6 +1450,167 @@ function sfxCheer(){
       }
     }catch(e){}
   });
+}
+function getEnglishVoice(){
+  if(englishVoice) return englishVoice;
+  try{
+    var voices = window.speechSynthesis.getVoices();
+    if(!voices || voices.length === 0) return null;
+    var i, v, lang;
+    for(i=0;i<voices.length;i++){
+      v = voices[i]; if(!v.lang) continue;
+      lang = v.lang.toLowerCase();
+      if(v.localService && lang.indexOf('en-gb') === 0){ englishVoice = v; return v; }
+    }
+    for(i=0;i<voices.length;i++){
+      v = voices[i]; if(!v.lang) continue;
+      lang = v.lang.toLowerCase();
+      if(v.localService && lang.indexOf('en') === 0){ englishVoice = v; return v; }
+    }
+    for(i=0;i<voices.length;i++){
+      v = voices[i]; if(!v.lang) continue;
+      lang = v.lang.toLowerCase();
+      if(lang.indexOf('en-gb') === 0){ englishVoice = v; return v; }
+    }
+    for(i=0;i<voices.length;i++){
+      v = voices[i]; if(!v.lang) continue;
+      lang = v.lang.toLowerCase();
+      if(lang.indexOf('en') === 0){ englishVoice = v; return v; }
+    }
+  }catch(e){}
+  return null;
+}
+function unlockSpeech(){
+  if(speechUnlocked || !speechReady) return;
+  try{
+    var u = new SpeechSynthesisUtterance(' ');
+    u.lang = 'en-GB'; u.volume = 0; u.rate = 1;
+    window.speechSynthesis.speak(u); speechUnlocked = true;
+    setTimeout(function(){ try{ getEnglishVoice(); }catch(e){} }, 200);
+  }catch(e){}
+}
+var speakSession = 0;
+function cancelSpeech(){
+  speakSession++;
+  _ydToken++;
+  _ttsPlaying = false;
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  stopSpeakRecognition();
+}
+function speakTTS(text, onEnd){
+  if(!save || save.muted || !speechReady || !text){
+    if(onEnd){ try{ onEnd(); }catch(e){} }
+    return;
+  }
+  speakSession++;
+  var mySession = speakSession;
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  setTimeout(function(){
+    if(mySession !== speakSession){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+    try{
+      if(!englishVoice) getEnglishVoice();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-GB'; u.rate = 0.5; u.pitch = 1.05; u.volume = SPEAK_VOL_MULT;
+      var v = getEnglishVoice(); if(v) u.voice = v;
+      var done = false;
+      function fin(){ if(done) return; done = true; _ttsPlaying = false; if(onEnd){ try{ onEnd(); }catch(e){} } }
+      u.onend = fin;
+      u.onerror = fin;
+      _ttsPlaying = true;
+      window.speechSynthesis.speak(u);
+      setTimeout(fin, 15000);
+    }catch(e){ if(onEnd){ try{ onEnd(); }catch(e){} } }
+  }, 60);
+}
+function playYoudao(text, onEnd){
+  _ydToken++;
+  var myToken = _ydToken;
+  var a = null;
+  try{
+    a = new Audio();
+    a.preload = 'auto';
+    a.setAttribute('playsinline','');
+    a.volume = 1.0;
+  }catch(e){ a = null; }
+  if(!a){ speakTTS(text, onEnd); return; }
+  var finished = false;
+  var wentTTS = false;
+  var audible = false;
+
+  function finish(){
+    if(finished) return;
+    finished = true;
+    if(myToken !== _ydToken) return;
+    if(onEnd){ try{ onEnd(); }catch(e){} }
+  }
+  function goTTS(){
+    if(wentTTS || finished) return;
+    wentTTS = true;
+    try{ a.onended = null; a.onerror = null; a.pause(); }catch(e){}
+    if(myToken !== _ydToken){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+    speakTTS(text, finish);
+  }
+  a.onended = function(){
+    if(finished || wentTTS) return;
+    var dur = isFinite(a.duration) ? a.duration : 0;
+    if(audible && dur > 0.5){ finish(); }
+    else { goTTS(); }
+  };
+  a.onerror = function(){
+    if(finished || wentTTS) return;
+    goTTS();
+  };
+  var url = YD_TTS_URL + '?audio=' + encodeURIComponent(text) + '&type=' + YD_TTS_TYPE;
+  try{ a.src = url; }catch(e){ goTTS(); return; }
+  _ttsPlaying = true;
+  var p = null;
+  try{ p = a.play(); }catch(e){ p = null; }
+  if(p && typeof p.then === 'function'){
+    p.catch(function(){
+      setTimeout(function(){
+        if(finished || wentTTS) return;
+        if(!a.paused || a.currentTime > 0.05){ audible = true; return; }
+        goTTS();
+      }, 300);
+    });
+  }
+  var probe = setInterval(function(){
+    if(finished){ clearInterval(probe); return; }
+    if(a.currentTime > 0.1){ audible = true; clearInterval(probe); }
+  }, 150);
+  setTimeout(function(){ clearInterval(probe); }, 3000);
+  setTimeout(function(){
+    if(finished || wentTTS) return;
+    if(!audible) goTTS();
+    else finish();
+  }, 2000);
+}
+function speak(text, onEnd){
+  if(!save || save.muted || !text){
+    if(onEnd){ try{ onEnd(); }catch(e){} }
+    return;
+  }
+  var trimmed = String(text).replace(/\s+/g, ' ').trim();
+  if(!trimmed){ if(onEnd){ try{ onEnd(); }catch(e){} } return; }
+  var isSingleWord = trimmed.indexOf(' ') === -1;
+  if(isSingleWord){ playYoudao(trimmed, onEnd); }
+  else { speakTTS(text, onEnd); }
+}
+function speakWithDelay(text){
+  if(!text) return;
+  speak(text, function(){
+    setTimeout(function(){ speak(text, null); }, 600);
+  });
+}
+if(speechReady){
+  try{
+    window.speechSynthesis.getVoices();
+    if(window.speechSynthesis.onvoiceschanged !== undefined){
+      window.speechSynthesis.onvoiceschanged = function(){ englishVoice = null; getEnglishVoice(); };
+    }
+    setTimeout(function(){ getEnglishVoice(); }, 300);
+    setTimeout(function(){ getEnglishVoice(); }, 1500);
+  }catch(e){}
 }
 function prerenderNebulas(){
   for(var i=0;i<bgNebulas.length;i++){
@@ -1811,21 +1754,12 @@ function showModal(title, desc, onOk, okText, cancelText, swapColors, onCancel){
   safeText($('modal-title'), title); safeText($('modal-desc'), desc);
   var okBtn = $('modal-ok'); var cancelBtn = $('modal-cancel');
   if(!okBtn || !cancelBtn) return;
-  okBtn.style.background = '';
-  okBtn.style.border = '';
-  okBtn.style.boxShadow = '';
-  cancelBtn.style.background = '';
-  cancelBtn.style.border = '';
-  cancelBtn.style.boxShadow = '';
+  okBtn.style.background = ''; okBtn.style.border = ''; okBtn.style.boxShadow = '';
+  cancelBtn.style.background = ''; cancelBtn.style.border = ''; cancelBtn.style.boxShadow = '';
   okBtn.textContent = okText || '确定'; cancelBtn.textContent = cancelText || '取消';
   cancelBtn.style.display = '';
-  if(swapColors){
-    okBtn.className = 'btn btn-ghost';
-    cancelBtn.className = 'btn btn-primary';
-  } else {
-    okBtn.className = 'btn btn-primary';
-    cancelBtn.className = 'btn btn-ghost';
-  }
+  if(swapColors){ okBtn.className = 'btn btn-ghost'; cancelBtn.className = 'btn btn-primary'; }
+  else { okBtn.className = 'btn btn-primary'; cancelBtn.className = 'btn btn-ghost'; }
   mask.classList.add('show');
   var close = function(){ mask.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; cancelBtn.style.display = ''; };
   okBtn.onclick = function(){ close(); if(onOk) onOk(); };
@@ -1833,22 +1767,19 @@ function showModal(title, desc, onOk, okText, cancelText, swapColors, onCancel){
 }
 function showFeedback(kind){
   var el = $('feedback'); if(!el) return;
-  var cls = 'feedback';
-  var txt = '';
+  var cls = 'feedback'; var txt = '';
   if(kind === 'ok'){ cls += ' ok'; txt = '✓'; }
   else if(kind === 'bad'){ cls += ' bad'; txt = '✕'; }
   else if(kind === 'hit'){ cls += ' hit'; txt = '💥'; }
   else { cls += ' ok'; txt = kind; }
-  el.className = cls;
-  el.textContent = txt;
+  el.className = cls; el.textContent = txt;
   void el.offsetWidth; el.classList.add('show');
 }
 function renderStars(targetEl, stars){
   if(!targetEl) return;
   targetEl.innerHTML = '';
-  var total = stars;
   for(var i=0;i<3;i++){
-    var seg = Math.max(0, Math.min(1, total - i));
+    var seg = Math.max(0, Math.min(1, stars - i));
     var span = document.createElement('span'); span.className = 'star-partial';
     var bg = document.createElement('span'); bg.className = 'star-bg'; bg.textContent = '★'; span.appendChild(bg);
     if(seg > 0){
@@ -1862,19 +1793,16 @@ function renderStarsBar(percent, totalStars){
   var pct = Math.max(0, Math.min(100, percent));
   var baseStr = '';
   for(var i=0;i<totalStars;i++) baseStr += '⭐';
-  return '<span class="star-bg">' + baseStr + '</span>' +
-         '<span class="star-top" style="width:' + pct + '%">' + baseStr + '</span>';
+  return '<span class="star-bg">' + baseStr + '</span>' + '<span class="star-top" style="width:' + pct + '%">' + baseStr + '</span>';
 }
 function renderStarRow(accuracy, totalStars){
   var litCount = accuracy * totalStars;
   var html = '';
   for(var i=0;i<totalStars;i++){
     var seg = Math.max(0, Math.min(1, litCount - i));
-    if(seg >= 0.999){
-      html += '<span class="star-on"></span>';
-    } else if(seg <= 0.001){
-      html += '<span class="star-off"></span>';
-    } else {
+    if(seg >= 0.999){ html += '<span class="star-on"></span>'; }
+    else if(seg <= 0.001){ html += '<span class="star-off"></span>'; }
+    else {
       html += '<span class="star-half">'
             +   '<span class="half-bg"></span>'
             +   '<span class="half-clip" style="width:' + (seg * 100) + '%">'
@@ -1895,16 +1823,13 @@ function showFinalVictory(){
     '<div class="congrats-line">通关</div>' +
     '<div class="congrats-line">你是最棒的！</div>';
   document.body.appendChild(wrap);
-
   sfxApplause(); sfxCheer();
   setTimeout(function(){ sfxApplause(); }, 900);
   setTimeout(function(){ sfxCheer(); }, 1600);
   setTimeout(function(){ sfxApplause(); }, 2400);
-
   var hue0 = Math.floor(Math.random()*360);
   explode(window.innerWidth/2, window.innerHeight*0.35, 'hsl('+hue0+',95%,65%)', 60);
   sfxFirework();
-
   var fwTimer = setInterval(function(){
     var x = Math.random()*window.innerWidth;
     var y = Math.random()*window.innerHeight*0.6 + window.innerHeight*0.08;
@@ -1912,7 +1837,6 @@ function showFinalVictory(){
     explode(x, y, 'hsl('+hue+',95%,65%)', 50);
     sfxFirework();
   }, 350);
-
   var confColors = ['#fbbf24','#f472b6','#a855f7','#60a5fa','#22c55e','#ef4444','#f59e0b','#ec4899','#f97316','#06b6d4','#84cc16','#ff1744','#ffea00','#00e5ff'];
   var confTimer = setInterval(function(){
     for(var ci=0;ci<11;ci++){
@@ -1930,7 +1854,6 @@ function showFinalVictory(){
       })();
     }
   }, 160);
-
   setTimeout(function(){
     clearInterval(fwTimer);
     clearInterval(confTimer);
@@ -2021,33 +1944,22 @@ function renderMap(){
               if(key.indexOf(pid + '_L') === 0){ hasPlayed = true; break; }
             }
           }
-          if(!hasPlayed){
-            startUnit(u, 0, uIdx);
-            return;
-          }
+          if(!hasPlayed){ startUnit(u, 0, uIdx); return; }
           var nxtLv = getNextLevelForUnit(u);
           showModal('选择模式', '继续上次进度，还是重新开始本单元？',
             function(){
               if(nxtLv < 3) startUnit(u, nxtLv, uIdx);
               else if(nxtLv === 3){
                 if(isBossUnlocked(u)) startBoss(u, uIdx);
-                else {
-                  showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false,
-                    function(){ restartUnit(uIdx); });
-                }
+                else { showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false, function(){ restartUnit(uIdx); }); }
               }
             },
             '继续游戏', '重新游戏', false,
             function(){
               showModal('确认重新开始？', '是否清除本单元所有测试记录？',
-                function(){
-                  restartUnit(uIdx);
-                },
+                function(){ restartUnit(uIdx); },
                 '确认', '取消', false,
-                function(){
-                  showScreen('s-map');
-                  renderMap();
-                }
+                function(){ showScreen('s-map'); renderMap(); }
               );
             }
           );
@@ -2064,18 +1976,12 @@ function renderMap(){
       var handleBossClick = function(e){
         if(e){ e.stopPropagation(); if(e.preventDefault) e.preventDefault(); }
         sfxClick();
-        if(isBossUnlocked(u)){
-          startBoss(u, uIdx);
-        } else {
-          showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false,
-            function(){ restartUnit(uIdx); });
-        }
+        if(isBossUnlocked(u)){ startBoss(u, uIdx); }
+        else { showModal('提示', '必须完成前三关，且前三关综合准确率达到 85% 才能打开小BOSS', null, '确定', '重新开始', false, function(){ restartUnit(uIdx); }); }
       };
       wrap.onclick = handleBossClick;
       var kids = wrap.querySelectorAll('*');
-      for(var ki=0; ki<kids.length; ki++){
-        kids[ki].onclick = handleBossClick;
-      }
+      for(var ki=0; ki<kids.length; ki++){ kids[ki].onclick = handleBossClick; }
     })(wraps[wi]);
   }
   var allCleared = true;
@@ -2089,9 +1995,7 @@ function renderMap(){
   for(var i2=0;i2<3;i2++){ finalStars += (fs[i2] || 0); }
   var finalPct = finalStars / 9;
   var finalStarBar = '';
-  if(finalUnlocked){
-    finalStarBar = '<div class="planet-stars">' + renderStarsBar(finalPct * 100, 3) + '</div>';
-  }
+  if(finalUnlocked){ finalStarBar = '<div class="planet-stars">' + renderStarsBar(finalPct * 100, 3) + '</div>'; }
   fc.innerHTML =
     '<div class="planet-icon">' + (finalUnlocked ? '🌟' : '🔒') + '</div>' +
     '<div class="planet-info">' +
@@ -2299,9 +2203,7 @@ function renderSpell(q, qb){
       var otherWord = unit.vocab[i][0];
       if(otherWord === q.word) continue;
       var cleanOther = otherWord.replace(/[.,!?;:'’\s]/g, '');
-      for(var j=0;j<cleanOther.length;j++){
-        allLetters.push(cleanOther.charAt(j).toLowerCase());
-      }
+      for(var j=0;j<cleanOther.length;j++){ allLetters.push(cleanOther.charAt(j).toLowerCase()); }
     }
     allLetters = shuffleArray(allLetters);
     var exCount = Math.max(2, Math.min(3, Math.floor(letterCount/3)));
@@ -2331,7 +2233,17 @@ function renderSpell(q, qb){
           var ansStr = filled.join('');
           var targetStr = targetLetters.join('');
           setTimeout(function(){
-            if(ansStr === targetStr){ correctFlow(); speak(q.word); setTimeout(nextQuestion, 1000); }
+            if(ansStr === targetStr){
+              correctFlow();
+              var _spellJumped = false;
+              var _spellJump = function(){
+                if(_spellJumped) return;
+                _spellJumped = true;
+                setTimeout(nextQuestion, 300);
+              };
+              speak(q.word, _spellJump);
+              setTimeout(_spellJump, 9000);
+            }
             else {
               wrongFlow(q);
               setTimeout(function(){
@@ -2408,8 +2320,6 @@ function renderOrder(q, qb){
   }
   renderZone();
 }
-
-/* ★★★ 跟读题：进入自动读一次；点喇叭每按一次读一次 ★★★ */
 function renderSpeak(q, qb){
   addLabel('跟读', qb);
   var status = document.createElement('div'); status.className = 'speak-status'; status.textContent = '点喇叭听发音，点麦克风开始朗读';
@@ -2447,16 +2357,14 @@ function renderSpeak(q, qb){
     stopSpkAnim();
     void spkBtn.offsetWidth;
     spkBtn.classList.add('playing');
-    /* 兜底：最多 9 秒后一定清动画 */
-    spkPlayingTimer = setTimeout(stopSpkAnim, 9000);
+    spkPlayingTimer = setTimeout(stopSpkAnim, 15000);
     speak(q.sentence, stopSpkAnim);
     var r = spkBtn.getBoundingClientRect();
     sparkle(r.left + r.width/2, r.top + r.height/2, '#60a5fa', 16);
   };
 
-  /* 进入题目时自动读一次 */
   unlockSpeech();
-  speak(q.sentence);
+  speakWithDelay(q.sentence);
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var isSecure = (window.isSecureContext !== undefined) ? window.isSecureContext : (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
@@ -2501,9 +2409,7 @@ function renderSpeak(q, qb){
       rec.onresult = function(e){
         if(!isRecording || currentRec !== rec) return;
         var text = '';
-        for(var i=0; i<e.results.length; i++){
-          text += e.results[i][0].transcript;
-        }
+        for(var i=0; i<e.results.length; i++){ text += e.results[i][0].transcript; }
         accumulatedText = text.trim();
       };
 
@@ -2533,17 +2439,15 @@ function renderSpeak(q, qb){
   function startRecording(){
     if(!micAvailable) return;
     stopRecording();
-    if(audioCtx && audioCtx.state === 'running'){
-      try{ audioCtx.suspend(); }catch(e){}
-    }
+    if(audioCtx && audioCtx.state === 'running'){ try{ audioCtx.suspend(); }catch(e){} }
     accumulatedText = '';
     hasRecorded = true;
     isRecording = true;
     stopSpkAnim();
     speakSession++;
     _ydToken++;
-    stopYoudaoAudio();
-    try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
+    _ttsPlaying = false;
+    try{ window.speechSynthesis.cancel(); }catch(e){}
     status.textContent = '🎙️ 请朗读（读完点"我读好了"）';
     tip.textContent = '';
 
@@ -2588,9 +2492,7 @@ function renderSpeak(q, qb){
       setTimeout(nextQuestion, 1000);
       return;
     }
-    if(isRecording){
-      stopRecording();
-    }
+    if(isRecording){ stopRecording(); }
     if(!hasRecorded){
       status.textContent = '请先点麦克风开始朗读';
       tip.textContent = '';
@@ -2610,13 +2512,8 @@ function renderSpeak(q, qb){
       finished = true;
       status.textContent = '✓ 读得不错！';
       tip.textContent = '';
-      if(audioCtx && audioCtx.state !== 'running'){
-        try{ audioCtx.resume(); }catch(e){}
-      }
-      setTimeout(function(){
-        correctFlow();
-        setTimeout(nextQuestion, 1000);
-      }, 250);
+      if(audioCtx && audioCtx.state !== 'running'){ try{ audioCtx.resume(); }catch(e){} }
+      setTimeout(function(){ correctFlow(); setTimeout(nextQuestion, 1000); }, 250);
     } else {
       status.textContent = '再读一遍～';
       tip.textContent = '点麦克风重新朗读';
@@ -2625,7 +2522,6 @@ function renderSpeak(q, qb){
     }
   };
 }
-
 function similarity(a,b){ if(!a || !b) return 0; var longer = a.length > b.length ? a : b; var shorter = a.length > b.length ? b : a; if(longer.length === 0) return 1; return (longer.length - editDistance(longer, shorter)) / longer.length; }
 function editDistance(a,b){
   var d = []; for(var i=0;i<=b.length;i++) d[i] = [i];
@@ -2673,7 +2569,6 @@ function endLevel(){
     stopTimer();
     var total = G.qs.length;
     var correctCount = G.correct;
-    var wrong = G.wrongCount;
     var stars = Math.round((correctCount / total) * 3 * 10) / 10;
     var pid = 'u' + G.unit.id;
     if(!save.stars[pid]) save.stars[pid] = {};
@@ -2694,10 +2589,7 @@ function endLevel(){
     for(var i=0;i<3;i++){ if(save.stars[pid] === undefined || save.stars[pid][i] === undefined){ allDone = false; break; } }
     if(save.stars[pid] === undefined || save.stars[pid]['boss'] === undefined) allDone = false;
     var planetCleared = false;
-    if(allDone && save.cleared.indexOf(pid) === -1){
-      save.cleared.push(pid); planetCleared = true;
-      checkAllClearedForFinal();
-    }
+    if(allDone && save.cleared.indexOf(pid) === -1){ save.cleared.push(pid); planetCleared = true; checkAllClearedForFinal(); }
     checkUnlockByAccuracy(unit);
     if(stars === 3){ save.streak = (save.streak||0) + 1; if(save.streak >= 3 && save.badges.indexOf('streak3') === -1){ save.badges.push('streak3'); showToast('🏅 徽章：连续三星达人！', 3000); } } else save.streak = 0;
     save.maxStreak = Math.max(save.maxStreak||0, save.streak||0);
@@ -2726,9 +2618,7 @@ function endLevel(){
     } else if(stars >= 2.9){
       sfxBadge();
       for(var fi2=0;fi2<4;fi2++){ (function(idx){ setTimeout(function(){ sparkle(Math.random()*W, Math.random()*H*0.6, '#fbbf24', 24); }, idx*150); })(fi2); }
-    } else {
-      sfxLevelUp();
-    }
+    } else { sfxLevelUp(); }
   }catch(e){ showFatalError('endLevel: ' + e.message); }
 }
 function startBoss(u, uIdx){
@@ -2752,10 +2642,7 @@ function startBoss(u, uIdx){
 }
 function initBossScreen(boss, isFinal){
   var heads = $('boss-heads');
-  if(heads){
-    if(isFinal) heads.classList.add('triple');
-    else heads.classList.remove('triple');
-  }
+  if(heads){ if(isFinal) heads.classList.add('triple'); else heads.classList.remove('triple'); }
   safeText($('boss-avatar'), boss.icon);
   safeText($('boss-head-left'), boss.icon);
   safeText($('boss-head-right'), boss.icon);
@@ -3000,9 +2887,7 @@ function throwItemAtBoss(item, callback){
     }, 300);
   } else {
     el.style.transition = 'transform .3s ease-out, opacity .2s';
-    requestAnimationFrame(function(){
-      el.style.transform = 'translate(-50%,-50%) scale(1.8) rotate(-15deg)';
-    });
+    requestAnimationFrame(function(){ el.style.transform = 'translate(-50%,-50%) scale(1.8) rotate(-15deg)'; });
     setTimeout(function(){
       el.style.transition = 'transform .4s cubic-bezier(.3,.1,.7,1.3), opacity .2s';
       el.style.transform = 'translate(' + (cx - startX) + 'px,' + (cy - startY) + 'px) translate(-50%,-50%) scale(2.6) rotate(25deg)';
@@ -3099,10 +2984,7 @@ function endBoss(win){
       var unit = G.unit; var allDone = true;
       for(var i=0;i<3;i++){ if(save.stars['u'+unit.id] === undefined || save.stars['u'+unit.id][i] === undefined){ allDone = false; break; } }
       if(save.stars['u'+unit.id] === undefined || save.stars['u'+unit.id]['boss'] === undefined) allDone = false;
-      if(allDone && save.cleared.indexOf(pid) === -1){
-        save.cleared.push(pid);
-        checkAllClearedForFinal();
-      }
+      if(allDone && save.cleared.indexOf(pid) === -1){ save.cleared.push(pid); checkAllClearedForFinal(); }
       checkUnlockByAccuracy(unit);
     }
     persistNow();
@@ -3128,12 +3010,8 @@ function endBoss(win){
       if(G.isFinal){ sfxBossWin(); setTimeout(showFinalVictory, 400); }
       else {
         sfxBossWin();
-        if(correct === totalQ){
-          celebrateHigh();
-          G.showCongratsAfterContinue = true;
-        } else {
-          for(var fi=0;fi<6;fi++){ (function(idx){ setTimeout(function(){ sparkle(Math.random()*W, Math.random()*H*0.5, '#fbbf24', 28); }, idx*120); })(fi); }
-        }
+        if(correct === totalQ){ celebrateHigh(); G.showCongratsAfterContinue = true; }
+        else { for(var fi=0;fi<6;fi++){ (function(idx){ setTimeout(function(){ sparkle(Math.random()*W, Math.random()*H*0.5, '#fbbf24', 28); }, idx*120); })(fi); } }
       }
     } else { sfxBossLose(); screenShake(3); screenFlash('red'); }
   }catch(e){ showFatalError('endBoss: ' + e.message); }
@@ -3170,8 +3048,7 @@ function bindEvents(){
   bind('btn-reset', function(){
     sfxClick();
     showModal('重置进度？','所有星星、金币、徽章都会清空，且无法恢复。',
-      null,
-      '取消', '重置', true,
+      null, '取消', '重置', true,
       function(){
         showModal('真的要重置吗？','这是最后确认，重置后无法撤销。', function(){
           try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
@@ -3190,18 +3067,12 @@ function bindEvents(){
     );
   });
   bind('btn-quit', function(){
-    sfxClick();
-    cancelSpeech();
-    showModal('退出关卡？','当前进度会保存。', function(){
-      stopTimer(); persistNow(); renderHome(); showScreen('s-home');
-    }, '退出', '继续', true);
+    sfxClick(); cancelSpeech();
+    showModal('退出关卡？','当前进度会保存。', function(){ stopTimer(); persistNow(); renderHome(); showScreen('s-home'); }, '退出', '继续', true);
   });
   bind('btn-boss-quit', function(){
-    sfxClick();
-    cancelSpeech();
-    showModal('退出 BOSS 战？','本关进度不会保留。', function(){
-      stopBossTimer(); persistNow(); renderHome(); showScreen('s-home');
-    }, '退出', '继续', true);
+    sfxClick(); cancelSpeech();
+    showModal('退出 BOSS 战？','本关进度不会保留。', function(){ stopBossTimer(); persistNow(); renderHome(); showScreen('s-home'); }, '退出', '继续', true);
   });
   bind('btn-boss-shop-toggle', function(){ sfxClick(); var shop = $('boss-shop'); if(!shop) return; G.bossShopOpen = !G.bossShopOpen; shop.classList.toggle('show', G.bossShopOpen); if(G.bossShopOpen) renderBossShop(); });
   bind('btn-boss-shop-close', function(){ sfxClick(); var shop = $('boss-shop'); if(shop) shop.classList.remove('show'); G.bossShopOpen = false; });
@@ -3220,12 +3091,8 @@ function bindEvents(){
     if(u && nextLv < 3){ startUnit(u, nextLv, uIdx); }
     else if(u && nextLv === 3){
       if(isBossUnlocked(u)) startBoss(u, uIdx);
-      else {
-        showScreen('s-map'); renderMap();
-        if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); }
-      }
-    }
-    else {
+      else { showScreen('s-map'); renderMap(); if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); } }
+    } else {
       showScreen('s-map'); renderMap();
       if(needCongrats){ setTimeout(function(){ showSingleModal('🎉 恭喜满分！', '恭喜你本次测试达到满分！', null, '确认'); }, 1000); }
     }
@@ -3258,9 +3125,7 @@ function init(){
       initAudio();
       unlockSpeech();
       if(_ttsPlaying) return;
-      if(audioCtx && audioCtx.state !== 'running'){
-        try{ audioCtx.resume(); }catch(e){}
-      }
+      if(audioCtx && audioCtx.state !== 'running'){ try{ audioCtx.resume(); }catch(e){} }
     };
     document.addEventListener('touchstart', keepAudioAlive, {passive:true});
     document.addEventListener('mousedown', keepAudioAlive);
