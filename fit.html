@@ -177,19 +177,34 @@ tr.new-row{animation:flashNew 1.6s ease-out}
 .modal-box.modal-box-large p .hl{padding:3px 10px;font-size:17px;margin:4px 3px}
 .modal-box.modal-box-large .modal-btns{gap:12px}
 .modal-box.modal-box-large .modal-btns button{padding:15px 0;font-size:15px;border-radius:14px}
-.date-picker-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:3500;padding:16px}
-.date-picker-box{background:#fff;border-radius:18px;padding:16px;width:100%;max-width:320px;box-shadow:0 24px 60px -14px rgba(15,23,42,.6)}
-.dp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:12px}
-.dp-title{font-size:15px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;flex:1;text-align:center}
-.dp-nav{width:30px;height:30px;border:none;border-radius:8px;background:#f1f5f9;color:#475569;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
-.dp-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
-.dp-weekdays span{text-align:center;font-size:10px;font-weight:900;color:#94a3b8;padding:4px 0}
-.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.dp-day{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:800;color:#1e293b;cursor:pointer;font-variant-numeric:tabular-nums;user-select:none}
-.dp-day:hover{background:#eff6ff;color:#2563eb}
+/* ============ 日期选择器（新版） ============ */
+.date-picker-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:3500;padding:10px;animation:fadeIn .22s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.date-picker-box{background:#fff;border-radius:24px;padding:22px 18px 20px;width:100%;max-width:370px;box-shadow:0 30px 80px -16px rgba(15,23,42,.7),0 0 0 1px rgba(255,255,255,.05);animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
+.dp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:18px}
+.dp-title{font-size:22.5px;font-weight:900;color:#0f172a;letter-spacing:-.3px;font-variant-numeric:tabular-nums;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.dp-nav{width:42px;height:42px;border:none;border-radius:12px;background:#f1f5f9;color:#475569;font-size:21px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0;transition:all .18s cubic-bezier(.4,0,.2,1);line-height:1;-webkit-user-select:none;user-select:none}
+.dp-nav:hover{background:#e2e8f0;color:#1e293b;transform:scale(1.06)}
+.dp-nav:active{transform:scale(.94);background:#cbd5e1}
+.dp-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
+.dp-weekdays span{text-align:center;font-size:15px;font-weight:900;color:#94a3b8;padding:6px 0;letter-spacing:.5px}
+.dp-weekdays span:first-child,.dp-weekdays span:last-child{color:#ef4444}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dp-day{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:19.5px;font-weight:800;color:#1e293b;cursor:pointer;font-variant-numeric:tabular-nums;user-select:none;transition:all .18s cubic-bezier(.4,0,.2,1);-webkit-tap-highlight-color:transparent}
+.dp-day:hover{background:#eff6ff;color:#2563eb;transform:scale(1.08)}
 .dp-day.empty{cursor:default;background:transparent}
-.dp-day.today{background:#e0e7ff;color:#4338ca}
-.dp-day.selected{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.dp-day.empty:hover{background:transparent;transform:none}
+.dp-day.today{background:#e0e7ff;color:#4338ca;box-shadow:inset 0 0 0 2.5px #a5b4fc}
+.dp-day.selected{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 6px 16px -6px rgba(37,99,235,.7);transform:scale(1.05)}
+.dp-day.selected:hover{color:#fff;transform:scale(1.1)}
+@media (max-width:400px){
+  .date-picker-box{padding:18px 14px 16px;border-radius:20px}
+  .dp-nav{width:38px;height:38px;font-size:19px}
+  .dp-title{font-size:19px}
+  .dp-weekdays span{font-size:13.5px}
+  .dp-day{font-size:17px;border-radius:10px}
+}
 .toast{position:fixed;left:50%;top:20px;transform:translate(-50%,-18px);background:#0f172a;color:#fff;font-size:13px;font-weight:800;padding:11px 22px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 14px 40px -10px rgba(15,23,42,.65);z-index:5000;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.success{background:linear-gradient(135deg,#16a34a,#15803d)}
