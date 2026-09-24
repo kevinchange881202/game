@@ -92,10 +92,11 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .summary-bar .item{display:inline-flex;align-items:baseline;gap:6px;font-size:13px;font-weight:700;color:#64748b}
 .summary-bar .item b{color:#0f172a;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
 .summary-bar .sep{width:1px;height:16px;background:#e8eef6}
-/* ============ 每日体重记录（1.5倍） ============ */
+/* ============ 每日体重记录 ============ */
 .weight-card{padding:14px}
-.weight-header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px;flex-wrap:wrap}
+.weight-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
 .weight-header h2{margin:0;font-size:25.5px;font-weight:900;color:#0f172a;line-height:1.1}
+.weight-right{display:flex;gap:8px;align-items:stretch}
 .weight-year-select{
   padding:12px 42px 12px 18px;
   border:1.5px solid #e4eaf2;
@@ -121,6 +122,30 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
   color:#166534;
   background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23166534' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }
+.weight-lock-btn{
+  padding:0 18px;
+  border:1.5px solid #fca5a5;
+  border-radius:15px;
+  font-size:22px;
+  line-height:1;
+  font-family:inherit;
+  cursor:pointer;
+  background:#fef2f2;
+  color:#ef4444;
+  transition:all .25s;
+  min-width:60px;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-appearance:none;
+  appearance:none;
+  box-shadow:0 2px 6px -2px rgba(239,68,68,.35);
+}
+.weight-lock-btn.unlocked{
+  border-color:#86efac;
+  background:#dcfce7;
+  color:#10b981;
+  box-shadow:0 2px 6px -2px rgba(16,185,129,.4);
+}
+.weight-lock-btn:active{transform:scale(.96)}
 .current-month-title{font-size:22.5px;font-weight:900;color:#0f172a;margin-bottom:12px;font-variant-numeric:tabular-nums}
 .month-tabs{display:flex;flex-wrap:wrap;gap:7.5px;margin-bottom:15px}
 .month-tab{border:none;background:#f1f5f9;color:#64748b;font-size:18px;font-weight:900;font-family:inherit;padding:9px 15px;border-radius:12px;cursor:pointer;position:relative}
@@ -134,34 +159,35 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .weight-table td{padding:0;display:block;border-bottom:none}
 .day-num{display:inline-block;font-size:19px;font-weight:900;color:#334155;font-variant-numeric:tabular-nums;text-align:center;width:100%}
 .today-cell .day-num{color:#6366f1}
-.w-input{width:100%;padding:7px 3px;border:1.5px solid transparent;border-radius:8px;font-size:24px;font-weight:900;font-family:inherit;color:#0f172a;background:#f8fafc;outline:none;text-align:center;font-variant-numeric:tabular-nums;-webkit-appearance:none}
+.w-input{width:100%;padding:7px 3px;border:1.5px solid transparent;border-radius:8px;font-size:28.8px;font-weight:900;font-family:inherit;color:#0f172a;background:#f8fafc;outline:none;text-align:center;font-variant-numeric:tabular-nums;-webkit-appearance:none}
 .w-input:focus{background:#fff;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .w-input.filled{background:#eff6ff;color:#1d4ed8}
 .w-input.filled-waist{background:#eff6ff;color:#16a34a}
+.w-input[readonly]{cursor:not-allowed}
 .w-input::-webkit-outer-spin-button,.w-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .weight-stats{margin-top:15px;padding-top:15px;border-top:1px dashed #eef2f7;display:flex;flex-wrap:wrap;gap:7.5px 21px;font-size:17.25px;color:#94a3b8;font-weight:700}
 .weight-stats b{color:#0f172a;font-weight:900;font-size:19.5px;margin-left:4.5px}
-/* ============ 参考标准（1.5倍） ============ */
-.scale-card{padding:18px 21px 21px}
-.scale-header{display:flex;align-items:baseline;gap:12px;margin-bottom:15px;flex-wrap:wrap}
+/* ============ 参考标准（图例放大） ============ */
+.scale-card{padding:20px 22px 22px}
+.scale-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .scale-header span:first-child{font-size:18px;font-weight:900;color:#334155}
 .scale-header span:last-child{font-size:15px;color:#b0b9c5;font-weight:700}
-.scale-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:15px}
+.scale-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
 .scale-row:last-child{margin-bottom:0}
-.scale-label{width:99px;flex-shrink:0;font-size:15.75px;font-weight:900;color:#64748b;text-align:right;white-space:nowrap;padding-top:1.5px}
-.scale-track-wrap{flex:1;position:relative;padding:9px 0 18px}
-.scale-track{position:relative;display:flex;height:18px;border-radius:7.5px}
+.scale-label{width:110px;flex-shrink:0;font-size:18px;font-weight:900;color:#64748b;text-align:right;white-space:nowrap;padding-top:2px}
+.scale-track-wrap{flex:1;position:relative;padding:14px 0 26px}
+.scale-track{position:relative;display:flex;height:22px;border-radius:9px}
 .scale-seg{height:100%}
-.scale-seg:first-child{border-radius:7.5px 0 0 7.5px}
-.scale-seg:last-child{border-radius:0 7.5px 7.5px 0}
-.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:18px;pointer-events:none}
-.tick{position:absolute;transform:translateX(-50%);font-size:12.75px;font-weight:800;color:#b8c2ce;font-variant-numeric:tabular-nums}
-.marker{position:absolute;top:50%;width:9px;height:33px;border-radius:6px;border:3px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
+.scale-seg:first-child{border-radius:9px 0 0 9px}
+.scale-seg:last-child{border-radius:0 9px 9px 0}
+.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:24px;pointer-events:none}
+.tick{position:absolute;transform:translateX(-50%);font-size:17px;font-weight:800;color:#94a3b8;font-variant-numeric:tabular-nums}
+.marker{position:absolute;top:50%;width:11px;height:42px;border-radius:7px;border:3px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
 .marker.bmi{background:#14b8a6}
 .marker.rfm{background:#6366f1}
 .marker.navy{background:#0ea5e9}
-.bmi-status-block{margin-top:9px;padding:12px 18px;border-radius:15px;font-size:17.25px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
-/* ============ 历史记录（1.5倍） ============ */
+.bmi-status-block{margin-top:14px;padding:14px 18px;border-radius:15px;font-size:20px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
+/* ============ 历史记录 ============ */
 .history-card{padding:21px;overflow-x:auto}
 .hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;gap:15px}
 .hist-head h2{margin:0;font-size:19.5px;font-weight:900;color:#334155}
@@ -297,7 +323,13 @@ tr.new-row{animation:flashNew 1.6s ease-out}
   </section>
 
   <section class="card weight-card" id="weightCard">
-    <div class="weight-header"><h2>每日体重记录</h2><select class="weight-year-select" id="weightYear"></select></div>
+    <div class="weight-header">
+      <h2>每日体重记录</h2>
+      <div class="weight-right">
+        <select class="weight-year-select" id="weightYear"></select>
+        <button class="weight-lock-btn" id="weightLockBtn" type="button" title="点击解锁每日记录">🔒</button>
+      </div>
+    </div>
     <div class="current-month-title" id="currentMonthTitle">--</div>
     <div class="month-tabs" id="monthTabs"></div>
     <table class="weight-table"><tbody id="weightBody"></tbody></table>
@@ -310,7 +342,7 @@ tr.new-row{animation:flashNew 1.6s ease-out}
     <div id="chenScaleRows" style="display:none">
       <div class="scale-row"><span class="scale-label">BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerChenBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
       <div class="bmi-status-block" id="bmiStatusBlock">等待输入体重与身高</div>
-      <div class="scale-row" style="margin-top:12px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row" style="margin-top:14px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
       <div class="scale-row"><span class="scale-label">海军法</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker navy" id="markerChenNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
     </div>
 
@@ -378,6 +410,9 @@ applyZoom();
 
 var appData = { history: [], weightData: {}, chenProfile: {}, chenLastJin: '', otherInputs: {} };
 var currentMode = null;
+
+/* 每日体重记录锁定状态：默认锁定 */
+var weightLocked = true;
 
 function loadLocal(){
   try {
@@ -622,6 +657,27 @@ function saveChenProfileFromInputs(){
   saveCloud({ chenProfile: appData.chenProfile });
 }
 
+/* ============ 每日体重记录锁按钮 ============ */
+function applyWeightLock(){
+  var btn = $('weightLockBtn');
+  if (weightLocked){
+    if (btn){ btn.textContent = '🔒'; btn.classList.remove('unlocked'); btn.title = '点击解锁每日记录'; }
+  } else {
+    if (btn){ btn.textContent = '🔓'; btn.classList.add('unlocked'); btn.title = '点击锁定每日记录'; }
+  }
+  /* 同步所有输入框的 readonly 属性 */
+  var inputs = document.querySelectorAll('.w-input');
+  for (var i=0; i<inputs.length; i++){
+    if (weightLocked) inputs[i].setAttribute('readonly', 'readonly');
+    else inputs[i].removeAttribute('readonly');
+  }
+}
+
+function toggleWeightLock(){
+  weightLocked = !weightLocked;
+  applyWeightLock();
+}
+
 function applyChenMode(){
   currentMode = 'chen';
   $('genderLabel').textContent = '姓名';
@@ -655,6 +711,7 @@ function applyChenMode(){
     if (v !== null && v >= 0) $('weightKg').value = (v / 2).toFixed(2);
   }
   initYearSelect(); renderMonthTabs(); renderWeightTable();
+  applyWeightLock();
 }
 
 function applyOtherMode(){
@@ -870,6 +927,7 @@ function renderWeightTable(){
   var today = new Date();
   var tY = today.getFullYear(), tM = today.getMonth()+1, tD = today.getDate();
 
+  var ro = weightLocked ? ' readonly' : '';
   var html = '';
   for (var day=1; day<=days; day++){
     var entry = normalizeEntry(monthData[day]);
@@ -879,8 +937,8 @@ function renderWeightTable(){
     var cls = isToday ? ' class="today-cell"' : '';
     html += '<tr' + cls + '>' +
       '<td><span class="day-num">' + day + '</span></td>' +
-      '<td><input type="number" inputmode="decimal" class="w-input' + (jinVal ? ' filled' : '') + '" data-day="' + day + '" data-type="jin" value="' + jinVal + '" placeholder="—" step="0.1" min="0"></td>' +
-      '<td><input type="number" inputmode="decimal" class="w-input' + (waistVal ? ' filled-waist' : '') + '" data-day="' + day + '" data-type="waist" value="' + waistVal + '" placeholder="—" step="0.1" min="0"></td>' +
+      '<td><input type="number" inputmode="decimal" class="w-input' + (jinVal ? ' filled' : '') + '" data-day="' + day + '" data-type="jin" value="' + jinVal + '" placeholder="—" step="0.1" min="0"' + ro + '></td>' +
+      '<td><input type="number" inputmode="decimal" class="w-input' + (waistVal ? ' filled-waist' : '') + '" data-day="' + day + '" data-type="waist" value="' + waistVal + '" placeholder="—" step="0.1" min="0"' + ro + '></td>' +
     '</tr>';
   }
   $('weightBody').innerHTML = html;
@@ -889,6 +947,7 @@ function renderWeightTable(){
 
 var weightSaveTimer = null;
 $('weightBody').addEventListener('input', function(e){
+  if (weightLocked) return; /* 锁定时不处理输入 */
   var input = e.target;
   if (!input.classList || !input.classList.contains('w-input')) return;
   var day = input.getAttribute('data-day');
@@ -935,7 +994,7 @@ function updateWeightStats(){
     var avgJin = jinEntries.reduce(function(s,e){return s+e.jin;}, 0) / jinEntries.length;
     html += '<span>平均 <b>' + avgJin.toFixed(1) + '</b> 斤</span>';
     jinEntries.sort(function(a,b){return a.day-b.day;});
-    var latest = jinEntries[jinEntries.length - 1];
+    var latest = jinEntries[jinEntries.length-1];
     html += '<span>最新 ' + weightMonth + '/' + latest.day + ' <b>' + latest.jin.toFixed(1) + '</b> 斤</span>';
   }
   if (waistEntries.length){
@@ -1101,6 +1160,11 @@ $('resetBtn').addEventListener('click', function(){
   update(); toast('已清空');
 });
 
+/* 每日体重记录锁按钮点击 */
+$('weightLockBtn').addEventListener('click', function(){
+  toggleWeightLock();
+});
+
 function initDateToday(){
   var today = getTodayStr();
   if (currentMode === 'other'){
@@ -1175,6 +1239,7 @@ setInterval(function(){
               if (v !== null && v >= 0) $('weightKg').value = (v / 2).toFixed(2);
             }
             renderMonthTabs(); renderWeightTable();
+            applyWeightLock();
           }
           renderHistory(); update();
         }
