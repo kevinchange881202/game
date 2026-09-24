@@ -2440,11 +2440,6 @@ function renderSpeak(q, qb){
       try{ currentRec.stop(); }catch(e){}
       currentRec = null;
     }
-    try{
-      var _resetU = new SpeechSynthesisUtterance(' ');
-      _resetU.lang = 'en-US'; _resetU.volume = 0; _resetU.rate = 1;
-      window.speechSynthesis.speak(_resetU);
-    }catch(e){}
   }
 
   _speakRecStopFn = function(){
@@ -2544,15 +2539,17 @@ function renderSpeak(q, qb){
 
   doneBtn.onclick = function(){
     if(finished) return;
+    if(isRecording){ stopRecording(); }
+    try{
+      var _resetU = new SpeechSynthesisUtterance(' ');
+      _resetU.lang = 'en-US'; _resetU.volume = 0; _resetU.rate = 1;
+      window.speechSynthesis.speak(_resetU);
+    }catch(e){}
     if(!micAvailable){
       finished = true;
-      stopRecording();
       correctFlow();
       setTimeout(nextQuestion, 1000);
       return;
-    }
-    if(isRecording){
-      stopRecording();
     }
     if(!hasRecorded){
       status.textContent = '请先点麦克风开始朗读';
