@@ -163,30 +163,47 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .w-input:focus{background:#fff;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .w-input.filled{background:#eff6ff;color:#1d4ed8}
 .w-input.filled-waist{background:#eff6ff;color:#16a34a}
-.w-input[readonly]{cursor:not-allowed}
+/* 锁定状态下点击无反应：去掉所有 focus 视觉反馈 */
+.w-input[readonly]{
+  cursor:default;
+  caret-color:transparent;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  user-select:none;
+  pointer-events:none;
+}
+.w-input[readonly]:focus{
+  background:inherit;
+  border-color:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+}
+.w-input[readonly].filled:focus{background:#eff6ff}
+.w-input[readonly].filled-waist:focus{background:#eff6ff}
+.w-input[readonly]:not(.filled):not(.filled-waist):focus{background:#f8fafc}
 .w-input::-webkit-outer-spin-button,.w-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .weight-stats{margin-top:15px;padding-top:15px;border-top:1px dashed #eef2f7;display:flex;flex-wrap:wrap;gap:7.5px 21px;font-size:17.25px;color:#94a3b8;font-weight:700}
 .weight-stats b{color:#0f172a;font-weight:900;font-size:19.5px;margin-left:4.5px}
-/* ============ 参考标准（图例放大） ============ */
-.scale-card{padding:20px 22px 22px}
-.scale-header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.scale-header span:first-child{font-size:18px;font-weight:900;color:#334155}
-.scale-header span:last-child{font-size:15px;color:#b0b9c5;font-weight:700}
-.scale-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+/* ============ 参考标准（示意图放大 1.4 倍） ============ */
+.scale-card{padding:28px 30.8px 30.8px}
+.scale-header{display:flex;align-items:baseline;gap:16.8px;margin-bottom:25.2px;flex-wrap:wrap}
+.scale-header span:first-child{font-size:25.2px;font-weight:900;color:#334155}
+.scale-header span:last-child{font-size:21px;color:#b0b9c5;font-weight:700}
+.scale-row{display:flex;align-items:flex-start;gap:19.6px;margin-bottom:28px}
 .scale-row:last-child{margin-bottom:0}
-.scale-label{width:110px;flex-shrink:0;font-size:18px;font-weight:900;color:#64748b;text-align:right;white-space:nowrap;padding-top:2px}
-.scale-track-wrap{flex:1;position:relative;padding:14px 0 26px}
-.scale-track{position:relative;display:flex;height:22px;border-radius:9px}
+.scale-label{width:154px;flex-shrink:0;font-size:25.2px;font-weight:900;color:#64748b;text-align:right;white-space:nowrap;padding-top:2.8px}
+.scale-track-wrap{flex:1;position:relative;padding:19.6px 0 36.4px}
+.scale-track{position:relative;display:flex;height:30.8px;border-radius:12.6px}
 .scale-seg{height:100%}
-.scale-seg:first-child{border-radius:9px 0 0 9px}
-.scale-seg:last-child{border-radius:0 9px 9px 0}
-.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:24px;pointer-events:none}
-.tick{position:absolute;transform:translateX(-50%);font-size:17px;font-weight:800;color:#94a3b8;font-variant-numeric:tabular-nums}
-.marker{position:absolute;top:50%;width:11px;height:42px;border-radius:7px;border:3px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
+.scale-seg:first-child{border-radius:12.6px 0 0 12.6px}
+.scale-seg:last-child{border-radius:0 12.6px 12.6px 0}
+.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:33.6px;pointer-events:none}
+.tick{position:absolute;transform:translateX(-50%);font-size:23.8px;font-weight:800;color:#94a3b8;font-variant-numeric:tabular-nums}
+.marker{position:absolute;top:50%;width:15.4px;height:58.8px;border-radius:9.8px;border:4.2px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
 .marker.bmi{background:#14b8a6}
 .marker.rfm{background:#6366f1}
 .marker.navy{background:#0ea5e9}
-.bmi-status-block{margin-top:14px;padding:14px 18px;border-radius:15px;font-size:20px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
+.bmi-status-block{margin-top:19.6px;padding:19.6px 25.2px;border-radius:21px;font-size:28px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
 /* ============ 历史记录 ============ */
 .history-card{padding:21px;overflow-x:auto}
 .hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;gap:15px}
@@ -342,7 +359,7 @@ tr.new-row{animation:flashNew 1.6s ease-out}
     <div id="chenScaleRows" style="display:none">
       <div class="scale-row"><span class="scale-label">BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerChenBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
       <div class="bmi-status-block" id="bmiStatusBlock">等待输入体重与身高</div>
-      <div class="scale-row" style="margin-top:14px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row" style="margin-top:19.6px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
       <div class="scale-row"><span class="scale-label">海军法</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker navy" id="markerChenNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
     </div>
 
@@ -410,8 +427,6 @@ applyZoom();
 
 var appData = { history: [], weightData: {}, chenProfile: {}, chenLastJin: '', otherInputs: {} };
 var currentMode = null;
-
-/* 每日体重记录锁定状态：默认锁定 */
 var weightLocked = true;
 
 function loadLocal(){
@@ -657,7 +672,6 @@ function saveChenProfileFromInputs(){
   saveCloud({ chenProfile: appData.chenProfile });
 }
 
-/* ============ 每日体重记录锁按钮 ============ */
 function applyWeightLock(){
   var btn = $('weightLockBtn');
   if (weightLocked){
@@ -665,7 +679,6 @@ function applyWeightLock(){
   } else {
     if (btn){ btn.textContent = '🔓'; btn.classList.add('unlocked'); btn.title = '点击锁定每日记录'; }
   }
-  /* 同步所有输入框的 readonly 属性 */
   var inputs = document.querySelectorAll('.w-input');
   for (var i=0; i<inputs.length; i++){
     if (weightLocked) inputs[i].setAttribute('readonly', 'readonly');
@@ -947,7 +960,7 @@ function renderWeightTable(){
 
 var weightSaveTimer = null;
 $('weightBody').addEventListener('input', function(e){
-  if (weightLocked) return; /* 锁定时不处理输入 */
+  if (weightLocked) return;
   var input = e.target;
   if (!input.classList || !input.classList.contains('w-input')) return;
   var day = input.getAttribute('data-day');
@@ -1160,7 +1173,6 @@ $('resetBtn').addEventListener('click', function(){
   update(); toast('已清空');
 });
 
-/* 每日体重记录锁按钮点击 */
 $('weightLockBtn').addEventListener('click', function(){
   toggleWeightLock();
 });
