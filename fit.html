@@ -1,19 +1,1233 @@
-function applyZoom(){
-  var sliderLevel = parseInt(zoomSlider.value, 10) / 100;
-  zoomValue.textContent = zoomSlider.value + '%';
-  var w = window.innerWidth;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>体重体脂率记录器</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#1e293b;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;padding:24px 12px 90px}
+.wrap{width:390px;max-width:100%;padding:22px 14px 60px;background:radial-gradient(ellipse 90% 55% at 8% 0%,rgba(99,102,241,.14),transparent 55%),radial-gradient(ellipse 80% 55% at 95% 5%,rgba(14,165,233,.14),transparent 55%),#eef2f8;border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 8px #1e293b,0 0 0 11px #334155}
+@media (max-width:480px){body{padding:0;display:block;background:#eef2f8}.wrap{width:100%;border-radius:0;box-shadow:none;padding:calc(16px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}}
+.conn-bar{position:fixed;top:0;left:0;right:0;padding:10px 16px;font-size:13px;font-weight:800;text-align:center;color:#fff;z-index:9000;transition:transform .3s;transform:translateY(-100%)}
+.conn-bar.show{transform:translateY(0)}
+.conn-bar.ok{background:linear-gradient(135deg,#16a34a,#15803d)}
+.conn-bar.err{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.header{text-align:center;margin-bottom:16px}
+.header h1{margin:0;font-size:40px;font-weight:900;letter-spacing:-1px;line-height:1.1}
+.header h1 span{background:linear-gradient(135deg,#6366f1,#0ea5e9);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.header p{margin:4px 0 0;font-size:11.5px;color:#94a3b8;font-weight:600}
+.card{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.05),0 12px 30px -20px rgba(15,23,42,.25);margin-bottom:12px}
+.welcome-overlay{position:fixed;inset:0;background:rgba(15,23,42,.68);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;z-index:3000;padding:16px}
+.welcome-box{background:#fff;border-radius:22px;padding:30px 22px 26px;max-width:360px;width:100%;box-shadow:0 30px 80px -20px rgba(15,23,42,.7);text-align:center}
+.welcome-box h2{margin:0 0 4px;font-size:19px;font-weight:900;color:#1e293b}
+.welcome-sub{margin:0 0 22px;font-size:12.5px;color:#94a3b8;font-weight:700}
+.welcome-btns{display:flex;gap:12px}
+.welcome-btn{flex:1;border:none;cursor:pointer;padding:20px 12px 18px;border-radius:16px;font-family:inherit;transition:transform .28s;display:flex;flex-direction:column;align-items:center;gap:9px;background:transparent}
+.welcome-btn:active{transform:scale(.97)}
+.welcome-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff}
+.welcome-name{font-size:16px;font-weight:900;letter-spacing:.8px}
+.welcome-desc{font-size:10.5px;font-weight:700}
+.welcome-btn.chen{background:linear-gradient(160deg,#dbeafe,#bfdbfe);border:2px solid #93c5fd}
+.welcome-btn.chen .welcome-avatar{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.welcome-btn.chen .welcome-name{color:#1e40af}
+.welcome-btn.chen .welcome-desc{color:#3b82f6}
+.welcome-btn.other{background:linear-gradient(160deg,#f1f5f9,#e2e8f0);border:2px solid #cbd5e1}
+.welcome-btn.other .welcome-avatar{background:linear-gradient(135deg,#64748b,#475569)}
+.welcome-btn.other .welcome-name{color:#334155}
+.welcome-btn.other .welcome-desc{color:#64748b}
+.input-card{padding:18px 16px;background:linear-gradient(160deg,#fff 0%,#fbfcff 55%,#f7faff 100%);border:1px solid rgba(37,99,235,.10);position:relative;overflow:hidden}
+.input-grid{display:grid;grid-template-columns:1.6fr 0.4fr 1fr;gap:14px 10px;position:relative;z-index:1}
+.field{display:flex;flex-direction:column}
+.field>label{font-size:15.5px;font-weight:900;color:#475569;margin-bottom:5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field input{width:100%;padding:10px;border:1.5px solid #e4eaf2;border-radius:11px;font-size:16.8px;font-weight:700;font-family:inherit;color:#0f172a;background:#fff;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
+.field input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.field input.error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.14)!important}
+.field.field-big input{font-size:31.2px!important;padding:10px!important;font-weight:900!important;border-radius:12px!important;letter-spacing:-1px}
+.date-trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px;border:1.5px solid #e4eaf2;border-radius:11px;background:#fff;cursor:pointer;overflow:hidden}
+.date-trigger.open{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.date-display{font-size:14.4px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.date-icon{flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#eff6ff;color:#2563eb}
+.date-icon svg{width:14px;height:14px}
+.name-display{height:52px;display:flex;align-items:center;padding:0 14px;font-size:30px;font-weight:900;color:#1e40af;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:12px;border:2px solid #bfdbfe;letter-spacing:2px}
+.lock-wrap{position:relative}
+.lock-wrap input{padding-right:30px!important}
+.lock-wrap input.locked-input{background:#f1f5f9!important;color:#94a3b8!important;cursor:not-allowed!important;border-color:#e2e8f0!important}
+.field input.always-locked{background:#f1f5f9!important;color:#94a3b8!important;cursor:not-allowed!important;border-color:#e2e8f0!important}
+.unlock-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;background:#ef4444;box-shadow:0 2px 6px -2px rgba(239,68,68,.5);z-index:2}
+.unlock-btn.locked{background:#10b981;box-shadow:0 2px 6px -2px rgba(16,185,129,.5)}
+.seg{display:flex;background:#eef2f8;border-radius:11px;padding:4px;height:42px}
+.seg label{flex:1;cursor:pointer}
+.seg input{display:none}
+.seg span{display:flex;align-items:center;justify-content:center;height:100%;border-radius:8px;font-size:14px;font-weight:900;color:#64748b;transition:all .2s}
+.seg input:checked+span{background:#fff;color:#2563eb;box-shadow:0 2px 8px -3px rgba(37,99,235,.4)}
+.btn-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:18px;position:relative;z-index:1}
+.btn{border:none;font-family:inherit;cursor:pointer;letter-spacing:.3px;white-space:nowrap}
+.btn-save{grid-column:2;padding:15px 48px;font-size:17px;font-weight:900;border-radius:13px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 8px 22px -8px rgba(37,99,235,.6)}
+.btn-reset{grid-column:3;justify-self:end;padding:13px 22px;font-size:14px;font-weight:800;border-radius:11px;background:#f1f5f9;color:#64748b}
+.results-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.result-card{position:relative;padding:12px 12px 14px;overflow:hidden;display:flex;flex-direction:column;margin-bottom:0;border-radius:14px}
+.result-card.bmi::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#14b8a6,#0d9488);border-radius:14px 14px 0 0}
+.result-card.rfm::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:14px 14px 0 0}
+.result-card.navy::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0ea5e9,#38bdf8);border-radius:14px 14px 0 0}
+.rc-head{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:4px;flex-wrap:wrap}
+.rc-name{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:900;color:#334155;white-space:nowrap}
+.rc-name .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot.bmi{background:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.2)}
+.dot.rfm{background:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+.dot.navy{background:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.2)}
+.rc-tag{font-size:10px;font-weight:900;padding:3px 8px;border-radius:99px;background:#f1f5f9;color:#94a3b8;white-space:nowrap;transition:background .25s,color .25s}
+.rc-value{font-size:30px;font-weight:900;line-height:1;letter-spacing:-1.5px;color:#0f172a;font-variant-numeric:tabular-nums;margin-top:2px;display:flex;align-items:baseline}
+.rc-value small{font-size:12px;font-weight:800;color:#a3aec0;margin-left:2px}
+@keyframes popNum{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
+.rc-value.pop{animation:popNum .34s cubic-bezier(.34,1.56,.64,1)}
+.summary-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;background:linear-gradient(135deg,#fff,#fbfcff)}
+.summary-bar .item{display:inline-flex;align-items:baseline;gap:6px;font-size:13px;font-weight:700;color:#64748b}
+.summary-bar .item b{color:#0f172a;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
+.summary-bar .sep{width:1px;height:16px;background:#e8eef6}
+.weight-card{padding:14px}
+.weight-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.weight-header h2{margin:0;font-size:25.5px;font-weight:900;color:#0f172a;line-height:1.1}
+.weight-right{display:flex;gap:8px;align-items:stretch}
+.weight-year-select{padding:12px 42px 12px 18px;border:1.5px solid #e4eaf2;border-radius:15px;font-size:19.5px;font-weight:900;font-family:inherit;color:#0f172a;cursor:pointer;-webkit-appearance:none;-moz-appearance:none;appearance:none;transition:background-color .25s,border-color .25s,color .25s;background-color:#fff;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;background-size:18px}
+.weight-year-select.is-current{background-color:#dcfce7;border-color:#86efac;color:#166534;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23166534' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")}
+.weight-lock-btn{padding:0 18px;border:1.5px solid #fca5a5;border-radius:15px;font-size:22px;line-height:1;font-family:inherit;cursor:pointer;background:#fef2f2;color:#ef4444;transition:all .25s;min-width:60px;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;appearance:none;box-shadow:0 2px 6px -2px rgba(239,68,68,.35)}
+.weight-lock-btn.unlocked{border-color:#86efac;background:#dcfce7;color:#10b981;box-shadow:0 2px 6px -2px rgba(16,185,129,.4)}
+.weight-lock-btn:active{transform:scale(.96)}
+.current-month-title{font-size:22.5px;font-weight:900;color:#0f172a;margin-bottom:12px;font-variant-numeric:tabular-nums}
+.month-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7.5px;margin-bottom:15px}
+.month-tab{border:none;background:#f1f5f9;color:#64748b;font-size:18px;font-weight:900;font-family:inherit;padding:9px 6px;border-radius:12px;cursor:pointer;position:relative;text-align:center;white-space:nowrap;width:100%}
+.month-tab.active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.month-tab.has-data::after{content:'';display:inline-block;width:7.5px;height:7.5px;border-radius:50%;background:#22c55e;margin-left:4px;vertical-align:middle}
+.month-tab.active.has-data::after{background:#fff}
+.weight-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.weight-table tbody{display:block}
+.weight-table tr{display:grid;grid-template-columns:36px 1fr 1fr;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid #f1f5f9}
+.weight-table tr:last-child{border-bottom:none}
+.weight-table td{padding:0;display:block;border-bottom:none}
+.day-num{display:inline-block;font-size:19px;font-weight:900;color:#334155;font-variant-numeric:tabular-nums;text-align:center;width:100%}
+.today-cell .day-num{color:#6366f1}
+.w-input{width:100%;padding:7px 3px;border:1.5px solid transparent;border-radius:8px;font-size:28.8px;font-weight:900;font-family:inherit;color:#0f172a;background:#f8fafc;outline:none;text-align:center;font-variant-numeric:tabular-nums;-webkit-appearance:none}
+.w-input:focus{background:#fff;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.w-input.filled{background:#eff6ff;color:#1d4ed8}
+.w-input.filled-waist{background:#eff6ff;color:#16a34a}
+.w-input[readonly]{cursor:default;caret-color:transparent;-webkit-user-select:none;-moz-user-select:none;user-select:none;pointer-events:none}
+.w-input[readonly]:focus{background:inherit;border-color:transparent!important;box-shadow:none!important;outline:none!important}
+.w-input[readonly].filled:focus{background:#eff6ff}
+.w-input[readonly].filled-waist:focus{background:#eff6ff}
+.w-input[readonly]:not(.filled):not(.filled-waist):focus{background:#f8fafc}
+.w-input::-webkit-outer-spin-button,.w-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.weight-stats{margin-top:15px;padding-top:15px;border-top:1px dashed #eef2f7;display:flex;flex-wrap:wrap;gap:7.5px 21px;font-size:17.25px;color:#94a3b8;font-weight:700}
+.weight-stats b{color:#0f172a;font-weight:900;font-size:19.5px;margin-left:4.5px}
+.scale-card{padding:28px 14px 30.8px}
+.scale-header{display:flex;align-items:baseline;gap:12px;margin-bottom:20px;flex-wrap:wrap;padding:0 4px}
+.scale-header span:first-child{font-size:22px;font-weight:900;color:#334155}
+.scale-header span:last-child{font-size:15px;color:#b0b9c5;font-weight:700}
+.scale-row{display:block;margin-bottom:22px}
+.scale-row:last-child{margin-bottom:0}
+.scale-label{display:block;width:auto;font-size:16px;font-weight:900;color:#64748b;text-align:left;white-space:nowrap;margin-bottom:6px;padding-left:4px}
+.scale-track-wrap{width:100%;position:relative;padding:6px 0 28px}
+.scale-track{position:relative;display:flex;width:100%;height:30.8px;border-radius:12.6px}
+.scale-seg{height:100%}
+.scale-seg:first-child{border-radius:12.6px 0 0 12.6px}
+.scale-seg:last-child{border-radius:0 12.6px 12.6px 0}
+.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:26px;pointer-events:none}
+.tick{position:absolute;transform:translateX(-50%);font-size:15.12px;font-weight:800;color:#94a3b8;font-variant-numeric:tabular-nums;white-space:nowrap}
+.marker{position:absolute;top:50%;width:15.4px;height:58.8px;border-radius:9.8px;border:4.2px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
+.marker.bmi{background:#14b8a6}
+.marker.rfm{background:#6366f1}
+.marker.navy{background:#0ea5e9}
+.bmi-status-block{margin-top:10px;padding:16px 22px;border-radius:18px;font-size:24px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
+.history-card{padding:21px;overflow-x:auto}
+.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;gap:15px}
+.hist-head h2{margin:0;font-size:19.5px;font-weight:900;color:#334155}
+.btn-clear-all{border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:18px;font-weight:900;font-family:inherit;padding:12px 21px;border-radius:13.5px;cursor:pointer;box-shadow:0 6px 18px -9px rgba(239,68,68,.7)}
+.hist-table{width:100%;border-collapse:collapse;font-size:17.25px;min-width:840px}
+.hist-table th,.hist-table td{padding:10.5px 6px;text-align:left;border-bottom:1px solid #f1f5f9}
+.hist-table th{font-size:14.25px;font-weight:900;color:#b0b9c5;text-transform:uppercase;padding-top:0;padding-bottom:9px}
+.hist-table tbody tr:last-child td{border-bottom:none}
+.hist-table td.num{font-variant-numeric:tabular-nums;font-weight:800;color:#1e293b}
+.hist-table td.time-cell{color:#2563eb;font-weight:900}
+@keyframes flashNew{0%{background:rgba(34,197,94,.25)}100%{background:transparent}}
+tr.new-row{animation:flashNew 1.6s ease-out}
+.del{border:none;background:transparent;color:#cbd5e1;font-size:16.5px;font-family:inherit;font-weight:800;cursor:pointer;padding:6px 9px;border-radius:9px}
+.del:hover{background:#fee2e2;color:#dc2626}
+.empty{color:#c2ccda;font-size:17.25px;font-weight:600;text-align:center;padding:24px 0}
+.disclaimer{margin-top:16px;font-size:10px;color:#a8b3c1;line-height:1.7;text-align:center}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:3600;padding:20px}
+.modal-box{background:#fff;border-radius:18px;padding:22px;max-width:340px;width:100%;box-shadow:0 24px 60px -12px rgba(15,23,42,.6)}
+.modal-box p{margin:0 0 16px;font-size:14px;font-weight:800;color:#1e293b;text-align:center;line-height:1.6}
+.modal-box p .hl{color:#2563eb;background:#eff6ff;padding:2px 8px;border-radius:6px;display:inline-block;margin:3px 2px}
+.modal-btns{display:flex;gap:10px}
+.modal-btns button{flex:1;padding:12px 0;border:none;border-radius:11px;font-size:13px;font-weight:900;font-family:inherit;cursor:pointer}
+.modal-ok{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+.modal-cancel{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.modal-box.modal-box-large{max-width:400px;padding:26px 24px 22px;border-radius:22px}
+.modal-box.modal-box-large p{font-size:16px;margin-bottom:20px;line-height:1.7}
+.modal-box.modal-box-large p .hl{padding:3px 10px;font-size:17px;margin:4px 3px}
+.modal-box.modal-box-large .modal-btns{gap:12px}
+.modal-box.modal-box-large .modal-btns button{padding:15px 0;font-size:15px;border-radius:14px}
+.date-picker-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:3500;padding:10px;animation:fadeIn .22s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.date-picker-box{background:#fff;border-radius:24px;padding:22px 18px 20px;width:100%;max-width:370px;box-shadow:0 30px 80px -16px rgba(15,23,42,.7),0 0 0 1px rgba(255,255,255,.05);animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
+.dp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:18px}
+.dp-title{font-size:22.5px;font-weight:900;color:#0f172a;letter-spacing:-.3px;font-variant-numeric:tabular-nums;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.dp-nav{width:42px;height:42px;border:none;border-radius:12px;background:#f1f5f9;color:#475569;font-size:21px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0;transition:all .18s cubic-bezier(.4,0,.2,1);line-height:1;-webkit-user-select:none;user-select:none}
+.dp-nav:hover{background:#e2e8f0;color:#1e293b;transform:scale(1.06)}
+.dp-nav:active{transform:scale(.94);background:#cbd5e1}
+.dp-weekdays,.dp-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:100%}
+.dp-weekdays{margin-bottom:8px}
+.dp-weekdays span{text-align:center;font-size:15px;font-weight:900;color:#94a3b8;padding:6px 0;line-height:1.2}
+.dp-weekdays span:first-child,.dp-weekdays span:last-child{color:#ef4444}
+.dp-day{display:flex;align-items:center;justify-content:center;padding:9px 0;border-radius:12px;font-size:19.5px;font-weight:800;color:#1e293b;cursor:pointer;font-variant-numeric:tabular-nums;user-select:none;transition:all .18s cubic-bezier(.4,0,.2,1);line-height:1.2;text-align:center;-webkit-tap-highlight-color:transparent}
+.dp-day:hover{background:#eff6ff;color:#2563eb}
+.dp-day.empty{cursor:default;background:transparent}
+.dp-day.empty:hover{background:transparent}
+.dp-day.today{background:#e0e7ff;color:#4338ca;box-shadow:inset 0 0 0 2.5px #a5b4fc}
+.dp-day.selected{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 6px 16px -6px rgba(37,99,235,.7)}
+.dp-day.selected:hover{color:#fff}
+@media (max-width:400px){
+  .date-picker-box{padding:18px 14px 16px;border-radius:20px}
+  .dp-nav{width:38px;height:38px;font-size:19px}
+  .dp-title{font-size:19px}
+  .dp-weekdays span{font-size:13.5px}
+  .dp-day{font-size:17px;border-radius:10px;padding:8px 0}
+}
+.toast{position:fixed;left:50%;top:20px;transform:translate(-50%,-18px);background:#0f172a;color:#fff;font-size:13px;font-weight:800;padding:11px 22px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 14px 40px -10px rgba(15,23,42,.65);z-index:5000;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.success{background:linear-gradient(135deg,#16a34a,#15803d)}
+.toast.error{background:linear-gradient(135deg,#ef4444,#dc2626)}
+/* ============ 桌面端自适应放大（纯 CSS，无需 JS） ============ */
+@media (min-width: 640px) {
+  .wrap {
+    zoom: 1.4;
+  }
+}
+@media (min-width: 900px) {
+  .wrap {
+    zoom: 1.7;
+  }
+}
+@media (min-width: 1300px) {
+  .wrap {
+    zoom: 1.9;
+  }
+}
+</style>
+</head>
+<body>
 
-  if (w <= 480){
-    // 手机端：完全不缩放
-    mainWrap.style.zoom = '';
-    mainWrap.style.transform = '';
+<div class="conn-bar" id="connBar"></div>
+
+<div class="welcome-overlay" id="welcomeModal">
+  <div class="welcome-box">
+    <h2>欢迎使用体重体脂率记录器</h2>
+    <p class="welcome-sub">请选择使用者身份</p>
+    <div class="welcome-btns">
+      <button class="welcome-btn chen" id="chooseChen" type="button">
+        <div class="welcome-avatar">陈</div>
+        <div class="welcome-name">陈柳江</div>
+        <div class="welcome-desc">常用模式 · 数据锁定</div>
+      </button>
+      <button class="welcome-btn other" id="chooseOther" type="button">
+        <div class="welcome-avatar">👥</div>
+        <div class="welcome-name">非本人</div>
+        <div class="welcome-desc">临时使用 · 自由填写</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="date-picker-overlay" id="datePickerModal" style="display:none">
+  <div class="date-picker-box">
+    <div class="dp-head">
+      <button class="dp-nav" id="dpPrevYear" type="button">«</button>
+      <button class="dp-nav" id="dpPrevMonth" type="button">‹</button>
+      <div class="dp-title" id="dpTitle">2026年9月</div>
+      <button class="dp-nav" id="dpNextMonth" type="button">›</button>
+      <button class="dp-nav" id="dpNextYear" type="button">»</button>
+    </div>
+    <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="dp-days" id="dpDays"></div>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap" style="display:none">
+  <header class="header">
+    <h1>体重体脂率<span>记录器</span></h1>
+    <p id="headerSub">RFM 公式 · 美国海军围度法</p>
+  </header>
+  <section class="card input-card">
+    <div class="input-grid" id="inputGrid">
+      <div class="field" id="genderField">
+        <label id="genderLabel">性别</label>
+        <div class="seg" id="genderSeg">
+          <label><input type="radio" name="gender" value="male" checked><span>男</span></label>
+          <label><input type="radio" name="gender" value="female"><span>女</span></label>
+        </div>
+        <div class="name-display" id="nameDisplay" style="display:none">陈柳江</div>
+      </div>
+      <div class="field" id="dateField">
+        <label>日期</label>
+        <input type="hidden" id="date">
+        <div class="date-trigger" id="dateTrigger">
+          <span class="date-display" id="dateDisplay">--</span>
+          <span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        </div>
+      </div>
+      <div class="field" id="heightField"><label>身高</label><div class="lock-wrap"><input type="number" id="height" placeholder="175" step="0.1" min="0"><button class="unlock-btn" id="unlockHeight" style="display:none" type="button">🔒</button></div></div>
+      <div class="field field-big" id="weightJinField"><label>体重 (斤)</label><input type="number" id="weightJin" placeholder="140" step="0.1" min="0"></div>
+      <div class="field" id="waistField"><label>腰围</label><div class="lock-wrap"><input type="number" id="waist" placeholder="80" step="0.1" min="0"><button class="unlock-btn" id="unlockWaist" style="display:none" type="button">🔒</button></div></div>
+      <div class="field" id="ageField"><label>年龄</label><div class="lock-wrap"><input type="number" id="age" placeholder="30" step="1" min="0"><button class="unlock-btn" id="unlockAge" style="display:none" type="button">🔒</button></div></div>
+      <div class="field" id="weightKgField"><label>体重 (kg)</label><input type="number" id="weightKg" placeholder="70" step="0.1" min="0"></div>
+      <div class="field" id="neckField"><label>颈围</label><div class="lock-wrap"><input type="number" id="neck" placeholder="37" step="0.1" min="0"><button class="unlock-btn" id="unlockNeck" style="display:none" type="button">🔒</button></div></div>
+      <div class="field" id="hipField" style="display:none"><label>臀围</label><input type="number" id="hip" placeholder="95" step="0.1" min="0"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-save" id="saveBtn" type="button">保存记录</button>
+      <button class="btn btn-reset" id="resetBtn" type="button">清空</button>
+    </div>
+  </section>
+
+  <section class="results-grid">
+    <div class="card result-card bmi"><div class="rc-head"><div class="rc-name"><span class="dot bmi"></span>BMI</div><div class="rc-tag" id="bmiTag">等待</div></div><div class="rc-value" id="bmiValueBox"><span id="bmiVal">--</span></div></div>
+    <div class="card result-card rfm"><div class="rc-head"><div class="rc-name"><span class="dot rfm"></span>RFM</div><div class="rc-tag" id="rfmTag">等待</div></div><div class="rc-value" id="rfmValueBox"><span id="rfmVal">--</span><small>%</small></div></div>
+    <div class="card result-card navy"><div class="rc-head"><div class="rc-name"><span class="dot navy"></span>海军法</div><div class="rc-tag" id="navyTag">等待</div></div><div class="rc-value" id="navyValueBox"><span id="navyVal">--</span><small>%</small></div></div>
+  </section>
+
+  <section class="card summary-bar">
+    <span class="item">平均体脂 <b id="avgOut">--</b></span><span class="sep"></span>
+    <span class="item">脂肪 <b id="fatOut">--</b></span><span class="sep"></span>
+    <span class="item">去脂 <b id="leanOut">--</b></span>
+  </section>
+
+  <section class="card weight-card" id="weightCard">
+    <div class="weight-header">
+      <h2>每日体重记录</h2>
+      <div class="weight-right">
+        <select class="weight-year-select" id="weightYear"></select>
+        <button class="weight-lock-btn" id="weightLockBtn" type="button" title="点击解锁每日记录">🔒</button>
+      </div>
+    </div>
+    <div class="current-month-title" id="currentMonthTitle">--</div>
+    <div class="month-tabs" id="monthTabs"></div>
+    <table class="weight-table"><tbody id="weightBody"></tbody></table>
+    <div class="weight-stats" id="weightStats"></div>
+  </section>
+
+  <section class="card scale-card" id="scaleCard">
+    <div class="scale-header"><span>身体指标参考标准</span><span id="scaleSub">BMI 中国标准 · 体脂 ACE 参考</span></div>
+
+    <div id="chenScaleRows" style="display:none">
+      <div class="scale-row"><span class="scale-label">BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerChenBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
+      <div class="bmi-status-block" id="bmiStatusBlock">等待输入体重与身高</div>
+      <div class="scale-row" style="margin-top:18px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">海军法</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker navy" id="markerChenNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+    </div>
+
+    <div id="otherScaleRows" style="display:none">
+      <div class="scale-row"><span class="scale-label">男性 · BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerMaleBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">男性 · 体脂</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerMaleRfm" style="display:none"></div><div class="marker navy" id="markerMaleNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">女性 · BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerFemaleBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">女性 · 体脂</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:32.5%;background:#60a5fa"></div><div class="scale-seg" style="width:17.5%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:22.5%;background:#ef4444"></div><div class="marker rfm" id="markerFemaleRfm" style="display:none"></div><div class="marker navy" id="markerFemaleNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:50%">20%</span><span class="tick" style="left:60%">24%</span><span class="tick" style="left:77.5%">31%</span></div></div></div>
+    </div>
+  </section>
+
+  <section class="card history-card">
+    <div class="hist-head"><h2>历史记录 <span id="histCount" style="color:#94a3b8;font-weight:700;font-size:16.5px"></span></h2><button class="btn-clear-all" id="clearHistBtn" type="button">清空全部</button></div>
+    <table class="hist-table" id="histTable" style="display:none"><thead><tr><th>日期</th><th>时间</th><th>体重(斤)</th><th>腰围</th><th>BMI</th><th>RFM</th><th>海军法</th><th></th></tr></thead><tbody id="histBody"></tbody></table>
+    <div class="empty" id="histEmpty">还没有保存任何记录</div>
+  </section>
+
+  <p class="disclaimer">所有公式均为统计估算，仅供趋势参考。<br>清空历史记录不影响每日体重记录。</p>
+</div>
+
+<div class="modal-overlay" id="confirmModal" style="display:none"><div class="modal-box"><p>确定要清空以往所有记录吗？<br>此操作不可撤销，且不会影响每日体重记录。</p><div class="modal-btns"><button class="modal-ok" id="modalOk" type="button">确定</button><button class="modal-cancel" id="modalCancel" type="button">取消</button></div></div></div>
+
+<div class="modal-overlay" id="dupModal" style="display:none"><div class="modal-box"><p>此体重今日已记录，请勿重复</p><div class="modal-btns"><button class="modal-ok" id="dupOk" type="button" style="background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 6px 18px -8px rgba(37,99,235,.7)">确认</button></div></div></div>
+
+<div class="modal-overlay" id="lockModal" style="display:none"><div class="modal-box modal-box-large"><p id="lockModalText">以下项目未锁定，是否锁定后再保存？</p><div class="modal-btns"><button class="modal-ok" id="lockOk" type="button" style="background:linear-gradient(135deg,#10b981,#059669)">锁定并保存</button><button class="modal-cancel" id="lockCancel" type="button" style="background:linear-gradient(135deg,#64748b,#475569)">取消</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var $ = function(id){ return document.getElementById(id); };
+var pf = function(v){ var n = parseFloat(v); return Number.isFinite(n) ? n : null; };
+var pad = function(n){ return String(n).padStart(2,'0'); };
+
+var toastEl = $('toast');
+var toastTimer = null;
+function toast(msg, type){
+  toastEl.textContent = msg;
+  toastEl.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2400);
+}
+
+var connBar = $('connBar');
+function showConn(text, cls){
+  connBar.textContent = text;
+  connBar.className = 'conn-bar show ' + (cls || '');
+  if (cls === 'ok') setTimeout(function(){ connBar.classList.remove('show'); }, 2000);
+}
+
+var appData = { history: [], weightData: {}, chenProfile: {}, chenLastJin: '', otherInputs: {} };
+var currentMode = null;
+var weightLocked = true;
+
+function loadLocal(){
+  try {
+    appData = {
+      history: JSON.parse(localStorage.getItem('bf_calc_history_v11') || '[]'),
+      weightData: JSON.parse(localStorage.getItem('bf_weight_daily_v7') || '{}'),
+      chenProfile: JSON.parse(localStorage.getItem('bf_chen_profile_v7') || '{}'),
+      chenLastJin: localStorage.getItem('bf_chen_last_jin') || '',
+      otherInputs: JSON.parse(localStorage.getItem('bf_inputs_other_v5') || '{}')
+    };
+  } catch(e){}
+}
+function saveLocal(partial){
+  try {
+    if (partial.history !== undefined) localStorage.setItem('bf_calc_history_v11', JSON.stringify(partial.history));
+    if (partial.weightData !== undefined) localStorage.setItem('bf_weight_daily_v7', JSON.stringify(partial.weightData));
+    if (partial.chenProfile !== undefined) localStorage.setItem('bf_chen_profile_v7', JSON.stringify(partial.chenProfile));
+    if (partial.chenLastJin !== undefined) localStorage.setItem('bf_chen_last_jin', partial.chenLastJin);
+    if (partial.otherInputs !== undefined) localStorage.setItem('bf_inputs_other_v5', JSON.stringify(partial.otherInputs));
+  } catch(e){}
+}
+var cloudSaveFn = null;
+function saveCloud(partial){
+  saveLocal(partial);
+  if (cloudSaveFn) cloudSaveFn(partial);
+}
+
+var CATS = {
+  male: [
+    { max: 5, label: '必需脂肪', color: '#60a5fa' },
+    { max: 13, label: '运动员级', color: '#34d399' },
+    { max: 17, label: '健康', color: '#22c55e' },
+    { max: 24, label: '可接受', color: '#fbbf24' },
+    { max: 1e9, label: '肥胖', color: '#ef4444' }
+  ],
+  female: [
+    { max: 13, label: '必需脂肪', color: '#60a5fa' },
+    { max: 20, label: '运动员级', color: '#34d399' },
+    { max: 24, label: '健康', color: '#22c55e' },
+    { max: 31, label: '可接受', color: '#fbbf24' },
+    { max: 1e9, label: '肥胖', color: '#ef4444' }
+  ]
+};
+function classify(val, gender){
+  var list = CATS[gender] || CATS.male;
+  for (var i=0; i<list.length; i++){ if (val <= list[i].max) return list[i]; }
+  return list[list.length - 1];
+}
+
+var BMI_CATS = [
+  { max: 18.5, label: '偏瘦', color: '#93c5fd', bg: '#dbeafe', text: '#1e40af' },
+  { max: 24, label: '正常', color: '#22c55e', bg: '#dcfce7', text: '#166534' },
+  { max: 28, label: '超重', color: '#fbbf24', bg: '#fef3c7', text: '#92400e' },
+  { max: 1e9, label: '肥胖', color: '#ef4444', bg: '#fee2e2', text: '#991b1b' }
+];
+function classifyBmi(val){
+  for (var i=0; i<BMI_CATS.length; i++){ if (val <= BMI_CATS[i].max) return BMI_CATS[i]; }
+  return BMI_CATS[BMI_CATS.length - 1];
+}
+
+function calcRFM(gender, height, waist){
+  if (!(height > 0) || !(waist > 0)) return null;
+  var ratio = height / waist;
+  var bf = (gender === 'male') ? 64 - 20 * ratio : 70 - 20 * ratio;
+  return Number.isFinite(bf) ? bf : null;
+}
+function calcNavy(gender, height, waist, neck, hip){
+  if (!(height > 0) || !(waist > 0) || !(neck > 0)) return null;
+  if (gender === 'male'){
+    var d = waist - neck;
+    if (d <= 0) return null;
+    var denom = 1.0324 - 0.19077 * Math.log10(d) + 0.15456 * Math.log10(height);
+    if (denom <= 0) return null;
+    var bf = 495 / denom - 450;
+    return Number.isFinite(bf) ? bf : null;
+  } else {
+    if (!(hip > 0)) return null;
+    var d2 = waist + hip - neck;
+    if (d2 <= 0) return null;
+    var denom2 = 1.29579 - 0.35004 * Math.log10(d2) + 0.221 * Math.log10(height);
+    if (denom2 <= 0) return null;
+    var bf2 = 495 / denom2 - 450;
+    return Number.isFinite(bf2) ? bf2 : null;
+  }
+}
+function calcBMI(kg, height){
+  if (!(kg > 0) || !(height > 0)) return null;
+  var m = height / 100;
+  return kg / (m * m);
+}
+
+function setMarker(el, val, min, max){
+  if (!el) return;
+  if (val === null || !Number.isFinite(val)){ el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  var lo = (min !== undefined) ? min : 0;
+  var hi = (max !== undefined) ? max : 40;
+  el.style.left = Math.max(0, Math.min(100, ((val - lo) / (hi - lo)) * 100)) + '%';
+}
+
+function renderBmi(val){
+  var valEl = $('bmiVal'), tagEl = $('bmiTag'), boxEl = $('bmiValueBox'), statusEl = $('bmiStatusBlock');
+  if (val === null || !Number.isFinite(val)){
+    valEl.textContent = '--';
+    tagEl.textContent = '等待'; tagEl.style.background = '#f1f5f9'; tagEl.style.color = '#94a3b8';
+    if (statusEl){ statusEl.textContent = '等待输入体重与身高'; statusEl.style.background = '#f1f5f9'; statusEl.style.color = '#94a3b8'; }
     return;
   }
-
-  // 电脑/平板：根据屏幕宽度自动等比放大
-  var baseZoom = Math.min(2, Math.max(1, (w - 60) / 390));
-  var finalZoom = baseZoom * sliderLevel;
-  mainWrap.style.zoom = finalZoom;
+  var old = valEl.textContent;
+  valEl.textContent = val.toFixed(1);
+  if (old !== valEl.textContent){ boxEl.classList.remove('pop'); void boxEl.offsetWidth; boxEl.classList.add('pop'); }
+  var cat = classifyBmi(val);
+  tagEl.textContent = cat.label; tagEl.style.background = cat.color + '1f'; tagEl.style.color = cat.color;
+  if (statusEl){ statusEl.textContent = '当前 BMI ' + val.toFixed(1) + ' · ' + cat.label; statusEl.style.background = cat.bg; statusEl.style.color = cat.text; }
 }
-window.addEventListener('resize', applyZoom);
-applyZoom();
+function renderOne(prefix, val, gender, emptyMsg){
+  var valEl = $(prefix + 'Val'), tagEl = $(prefix + 'Tag'), boxEl = $(prefix + 'ValueBox');
+  if (val === null || !Number.isFinite(val)){
+    valEl.textContent = '--'; tagEl.textContent = emptyMsg || '等待';
+    tagEl.style.background = '#f1f5f9'; tagEl.style.color = '#94a3b8'; return;
+  }
+  var old = valEl.textContent;
+  valEl.textContent = val.toFixed(1);
+  if (old !== valEl.textContent){ boxEl.classList.remove('pop'); void boxEl.offsetWidth; boxEl.classList.add('pop'); }
+  var cat = classify(val, gender);
+  tagEl.textContent = cat.label; tagEl.style.background = cat.color + '1f'; tagEl.style.color = cat.color;
+}
+
+var dpYear, dpMonth, dpSelectedDay, userPickedDate = false;
+function setDateValue(val){
+  $('date').value = val || '';
+  if (val){ var p = val.split('-'); $('dateDisplay').textContent = p[0] + '-' + p[1] + '-' + p[2]; }
+  else $('dateDisplay').textContent = '请选择';
+}
+function getTodayStr(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function openDatePicker(){
+  var val = $('date').value;
+  if (val){ var p = val.split('-').map(Number); dpYear = p[0]; dpMonth = p[1]; dpSelectedDay = p[2]; }
+  else { var n = new Date(); dpYear = n.getFullYear(); dpMonth = n.getMonth()+1; dpSelectedDay = n.getDate(); }
+  renderDatePicker(); $('datePickerModal').style.display = 'flex';
+}
+function closeDatePicker(){ $('datePickerModal').style.display = 'none'; }
+function renderDatePicker(){
+  $('dpTitle').textContent = dpYear + '年' + dpMonth + '月';
+  var firstDay = new Date(dpYear, dpMonth-1, 1).getDay();
+  var daysInM = new Date(dpYear, dpMonth, 0).getDate();
+  var now = new Date(); var tY = now.getFullYear(), tM = now.getMonth()+1, tD = now.getDate();
+  var html = '';
+  for (var i=0; i<firstDay; i++) html += '<div class="dp-day empty"></div>';
+  for (var d=1; d<=daysInM; d++){
+    var cls = 'dp-day';
+    if (dpYear === tY && dpMonth === tM && d === tD) cls += ' today';
+    if (dpSelectedDay === d) cls += ' selected';
+    html += '<div class="' + cls + '" data-day="' + d + '">' + d + '</div>';
+  }
+  $('dpDays').innerHTML = html;
+}
+function shiftMonth(delta){ dpMonth += delta; if (dpMonth>12){dpMonth=1;dpYear++;} if (dpMonth<1){dpMonth=12;dpYear--;} dpSelectedDay=1; renderDatePicker(); }
+function shiftYear(delta){ dpYear += delta; renderDatePicker(); }
+
+$('dateTrigger').addEventListener('click', openDatePicker);
+$('dpPrevYear').addEventListener('click', function(){ shiftYear(-1); });
+$('dpNextYear').addEventListener('click', function(){ shiftYear(1); });
+$('dpPrevMonth').addEventListener('click', function(){ shiftMonth(-1); });
+$('dpNextMonth').addEventListener('click', function(){ shiftMonth(1); });
+$('dpDays').addEventListener('click', function(e){
+  var cell = e.target.closest('.dp-day');
+  if (!cell || cell.classList.contains('empty')) return;
+  var d = parseInt(cell.getAttribute('data-day'), 10);
+  if (!Number.isFinite(d)) return;
+  dpSelectedDay = d;
+  setDateValue(dpYear + '-' + pad(dpMonth) + '-' + pad(d));
+  userPickedDate = true; closeDatePicker(); update();
+});
+$('datePickerModal').addEventListener('click', function(e){ if (e.target === $('datePickerModal')) closeDatePicker(); });
+
+var lastAutoToday = getTodayStr();
+setInterval(function(){
+  if (userPickedDate) return;
+  var today = getTodayStr();
+  if (today !== lastAutoToday){ lastAutoToday = today; setDateValue(today); update(); }
+}, 20000);
+
+var LOCKABLE = ['height', 'age', 'waist', 'neck'];
+var fieldLocked = { height: false, age: false, waist: false, neck: false };
+var FIELD_NAMES = { height: '身高', age: '年龄', waist: '腰围', neck: '颈围' };
+function btnIdFor(f){ return 'unlock' + f.charAt(0).toUpperCase() + f.slice(1); }
+function setFieldLock(fieldId, locked){
+  fieldLocked[fieldId] = locked;
+  var input = $(fieldId), btn = $(btnIdFor(fieldId));
+  if (!input) return;
+  if (locked){
+    input.classList.add('locked-input'); input.setAttribute('readonly', 'readonly');
+    if (btn){ btn.textContent = '🔒'; btn.classList.add('locked'); }
+  } else {
+    input.classList.remove('locked-input'); input.removeAttribute('readonly');
+    if (btn){ btn.textContent = '🔓'; btn.classList.remove('locked'); }
+  }
+}
+LOCKABLE.forEach(function(fieldId){
+  var btn = $(btnIdFor(fieldId));
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var nowLocked = fieldLocked[fieldId];
+    setFieldLock(fieldId, !nowLocked);
+    if (nowLocked) $(fieldId).focus();
+    else if (currentMode === 'chen') saveChenProfileFromInputs();
+  });
+});
+function getUnlockedFields(){
+  var unlocked = [];
+  LOCKABLE.forEach(function(fieldId){
+    if (!fieldLocked[fieldId]){
+      var el = $(fieldId);
+      if (el && (el.value || '').toString().trim() !== '') unlocked.push(fieldId);
+    }
+  });
+  return unlocked;
+}
+
+var FIELD_EL = {
+  gender: function(){return $('genderField');}, date: function(){return $('dateField');},
+  height: function(){return $('heightField');}, weightJin: function(){return $('weightJinField');},
+  waist: function(){return $('waistField');}, age: function(){return $('ageField');},
+  weightKg: function(){return $('weightKgField');}, neck: function(){return $('neckField');},
+  hip: function(){return $('hipField');}
+};
+function reorderInputs(mode){
+  var grid = $('inputGrid');
+  var order = (mode === 'chen')
+    ? ['gender','date','height','weightJin','waist','age','weightKg','neck','hip']
+    : ['gender','date','waist','weightJin','height','neck','weightKg','hip','age'];
+  order.forEach(function(k){ var el = FIELD_EL[k](); if (el) grid.appendChild(el); });
+}
+
+function loadChenProfile(){ return appData.chenProfile || {}; }
+function saveChenProfileFromInputs(){
+  appData.chenProfile = {
+    height: $('height').value, age: $('age').value,
+    waist: $('waist').value, neck: $('neck').value
+  };
+  saveCloud({ chenProfile: appData.chenProfile });
+}
+
+function applyWeightLock(){
+  var btn = $('weightLockBtn');
+  if (weightLocked){
+    if (btn){ btn.textContent = '🔒'; btn.classList.remove('unlocked'); btn.title = '点击解锁每日记录'; }
+  } else {
+    if (btn){ btn.textContent = '🔓'; btn.classList.add('unlocked'); btn.title = '点击锁定每日记录'; }
+  }
+  var inputs = document.querySelectorAll('.w-input');
+  for (var i=0; i<inputs.length; i++){
+    if (weightLocked) inputs[i].setAttribute('readonly', 'readonly');
+    else inputs[i].removeAttribute('readonly');
+  }
+}
+function toggleWeightLock(){ weightLocked = !weightLocked; applyWeightLock(); }
+
+function applyChenMode(){
+  currentMode = 'chen';
+  $('genderLabel').textContent = '姓名';
+  $('genderSeg').style.display = 'none';
+  $('nameDisplay').style.display = 'flex';
+  var m = document.querySelector('input[name="gender"][value="male"]');
+  if (m) m.checked = true;
+  $('weightKg').classList.add('always-locked');
+  $('weightKg').setAttribute('readonly', 'readonly');
+  reorderInputs('chen');
+  $('heightField').classList.remove('field-big');
+
+  var profile = loadChenProfile();
+  if (profile.height) $('height').value = profile.height;
+  if (profile.age) $('age').value = profile.age;
+  if (profile.waist) $('waist').value = profile.waist;
+  if (profile.neck) $('neck').value = profile.neck;
+
+  LOCKABLE.forEach(function(fieldId){
+    setFieldLock(fieldId, true);
+    var btn = $(btnIdFor(fieldId)); if (btn) btn.style.display = 'flex';
+  });
+  $('hipField').style.display = 'none';
+  $('weightCard').style.display = '';
+  $('chenScaleRows').style.display = '';
+  $('otherScaleRows').style.display = 'none';
+
+  if (appData.chenLastJin){
+    $('weightJin').value = appData.chenLastJin;
+    var v = pf(appData.chenLastJin);
+    if (v !== null && v >= 0) $('weightKg').value = (v / 2).toFixed(2);
+  }
+  initYearSelect(); renderMonthTabs(); renderWeightTable();
+  applyWeightLock();
+}
+
+function applyOtherMode(){
+  currentMode = 'other';
+  $('genderLabel').textContent = '性别';
+  $('genderSeg').style.display = 'flex';
+  $('nameDisplay').style.display = 'none';
+  $('weightKg').classList.remove('always-locked');
+  $('weightKg').removeAttribute('readonly');
+  LOCKABLE.forEach(function(fieldId){
+    setFieldLock(fieldId, false);
+    var btn = $(btnIdFor(fieldId)); if (btn) btn.style.display = 'none';
+  });
+  reorderInputs('other');
+  $('heightField').classList.add('field-big');
+  $('weightCard').style.display = 'none';
+  $('chenScaleRows').style.display = 'none';
+  $('otherScaleRows').style.display = '';
+  ['height','age','waist','neck','weightKg','weightJin','hip'].forEach(function(id){ $(id).value = ''; });
+
+  var oi = appData.otherInputs || {};
+  if (oi.gender){ var el = document.querySelector('input[name="gender"][value="' + oi.gender + '"]'); if (el) el.checked = true; }
+  ['age','height','weightKg','weightJin','waist','neck','hip'].forEach(function(k){
+    if (oi[k] !== undefined && oi[k] !== null) $(k).value = oi[k];
+  });
+}
+
+$('chooseChen').addEventListener('click', function(){
+  $('welcomeModal').style.display = 'none';
+  $('mainWrap').style.display = 'block';
+  $('headerSub').textContent = '';
+  $('headerSub').style.display = 'none';
+  applyChenMode();
+  initDateToday(); update();
+});
+$('chooseOther').addEventListener('click', function(){
+  $('welcomeModal').style.display = 'none';
+  $('mainWrap').style.display = 'block';
+  $('headerSub').textContent = 'RFM 公式 · 美国海军围度法';
+  $('headerSub').style.display = '';
+  applyOtherMode();
+  initDateToday(); update();
+});
+
+function saveOtherInputs(){
+  if (currentMode !== 'other') return;
+  var genderEl = document.querySelector('input[name="gender"]:checked');
+  appData.otherInputs = {
+    gender: genderEl ? genderEl.value : 'male',
+    date: $('date').value, age: $('age').value, height: $('height').value,
+    weightKg: $('weightKg').value, weightJin: $('weightJin').value,
+    waist: $('waist').value, neck: $('neck').value, hip: $('hip').value
+  };
+  saveCloud({ otherInputs: appData.otherInputs });
+}
+
+function update(){
+  if (!currentMode) return;
+  var genderEl = document.querySelector('input[name="gender"]:checked');
+  var gender = genderEl ? genderEl.value : 'male';
+  var height = pf($('height').value), waist = pf($('waist').value);
+  var neck = pf($('neck').value), hip = pf($('hip').value);
+  var kg = pf($('weightKg').value);
+
+  if (currentMode === 'other') $('hipField').style.display = (gender === 'female') ? '' : 'none';
+
+  var rfmVal = calcRFM(gender, height, waist);
+  var navyVal = calcNavy(gender, height, waist, neck, hip);
+  var bmiVal = calcBMI(kg, height);
+
+  var navyEmpty = '等待';
+  if (height > 0 && waist > 0 && neck > 0){
+    if (waist <= neck) navyEmpty = '腰围需>颈围';
+    else if (gender === 'female' && !(hip > 0)) navyEmpty = '请填臀围';
+    else navyEmpty = '数据不完整';
+  } else if (height > 0 && waist > 0 && !(neck > 0)) navyEmpty = '请填颈围';
+
+  renderBmi(bmiVal);
+  renderOne('rfm', rfmVal, gender, '等待');
+  renderOne('navy', navyVal, gender, navyEmpty);
+
+  var isMale = (gender === 'male');
+  if (currentMode === 'chen'){
+    setMarker($('markerChenBmi'), bmiVal, 10, 40);
+    setMarker($('markerChenRfm'), rfmVal);
+    setMarker($('markerChenNavy'), navyVal);
+  } else {
+    setMarker($('markerMaleBmi'), isMale ? bmiVal : null, 10, 40);
+    setMarker($('markerFemaleBmi'), isMale ? null : bmiVal, 10, 40);
+    setMarker($('markerMaleRfm'), isMale ? rfmVal : null);
+    setMarker($('markerMaleNavy'), isMale ? navyVal : null);
+    setMarker($('markerFemaleRfm'), isMale ? null : rfmVal);
+    setMarker($('markerFemaleNavy'), isMale ? null : navyVal);
+  }
+
+  var vals = [rfmVal, navyVal].filter(function(v){ return v !== null && Number.isFinite(v); });
+  if (vals.length){
+    var avg = vals.reduce(function(a,b){return a+b;}, 0) / vals.length;
+    $('avgOut').textContent = avg.toFixed(1) + '%';
+    if (kg > 0){
+      var fat = kg * avg / 100;
+      $('fatOut').textContent = fat.toFixed(1) + 'kg';
+      $('leanOut').textContent = (kg - fat).toFixed(1) + 'kg';
+    } else { $('fatOut').textContent = '--'; $('leanOut').textContent = '--'; }
+  } else { $('avgOut').textContent = '--'; $('fatOut').textContent = '--'; $('leanOut').textContent = '--'; }
+
+  if (currentMode === 'other') saveOtherInputs();
+  if (currentMode === 'chen'){
+    appData.chenLastJin = $('weightJin').value;
+    saveCloud({ chenLastJin: appData.chenLastJin });
+  }
+}
+
+var syncing = false;
+$('weightKg').addEventListener('input', function(){
+  if (syncing || this.hasAttribute('readonly')) return;
+  syncing = true;
+  var v = pf(this.value);
+  $('weightJin').value = (v !== null && v >= 0) ? +(v*2).toFixed(1) : '';
+  syncing = false; update();
+});
+$('weightJin').addEventListener('input', function(){
+  if (syncing) return;
+  syncing = true;
+  var v = pf(this.value);
+  $('weightKg').value = (v !== null && v >= 0) ? +(v/2).toFixed(2) : '';
+  syncing = false; update();
+});
+['height','waist','neck','hip','age'].forEach(function(id){
+  $(id).addEventListener('input', function(){
+    if (this.classList.contains('error')) this.classList.remove('error');
+    update();
+  });
+});
+document.querySelectorAll('input[name="gender"]').forEach(function(r){ r.addEventListener('change', update); });
+
+var nowDate = new Date();
+var curY = nowDate.getFullYear();
+var weightYear = (curY >= 2026 && curY <= 2036) ? curY : 2026;
+var weightMonth = nowDate.getMonth() + 1;
+
+function daysInMonth(y, m){ return new Date(y, m, 0).getDate(); }
+function normalizeEntry(raw){
+  if (raw == null) return { jin: null, waist: null };
+  if (typeof raw === 'number') return { jin: raw, waist: null };
+  if (typeof raw === 'object'){
+    return {
+      jin: (raw.jin != null && Number.isFinite(Number(raw.jin))) ? Number(raw.jin) : null,
+      waist: (raw.waist != null && Number.isFinite(Number(raw.waist))) ? Number(raw.waist) : null
+    };
+  }
+  return { jin: null, waist: null };
+}
+
+function initYearSelect(){
+  var sel = $('weightYear'); if (!sel) return;
+  sel.innerHTML = '';
+  for (var y=2026; y<=2036; y++){
+    var opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y + ' 年';
+    if (y === weightYear) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  updateYearSelectStyle();
+  if (!sel._bound){
+    sel._bound = true;
+    sel.addEventListener('change', function(){
+      weightYear = parseInt(this.value);
+      updateYearSelectStyle();
+      renderMonthTabs(); renderWeightTable();
+    });
+  }
+}
+function updateYearSelectStyle(){
+  var sel = $('weightYear'); if (!sel) return;
+  var realCurY = new Date().getFullYear();
+  if (weightYear === realCurY) sel.classList.add('is-current');
+  else sel.classList.remove('is-current');
+}
+
+function renderMonthTabs(){
+  var wrap = $('monthTabs'); if (!wrap) return;
+  var data = appData.weightData || {};
+  wrap.innerHTML = '';
+  for (var m=1; m<=12; m++){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'month-tab' + (m === weightMonth ? ' active' : '');
+    btn.textContent = m + '月';
+    var key = weightYear + '-' + pad(m);
+    if (data[key] && Object.keys(data[key]).length > 0) btn.classList.add('has-data');
+    (function(month){
+      btn.addEventListener('click', function(){ weightMonth = month; renderMonthTabs(); renderWeightTable(); });
+    })(m);
+    wrap.appendChild(btn);
+  }
+  $('currentMonthTitle').textContent = weightYear + '年' + weightMonth + '月';
+}
+
+function renderWeightTable(){
+  var year = weightYear, month = weightMonth;
+  var days = daysInMonth(year, month);
+  var monthKey = year + '-' + pad(month);
+  var data = appData.weightData || {};
+  var monthData = data[monthKey] || {};
+  var today = new Date();
+  var tY = today.getFullYear(), tM = today.getMonth()+1, tD = today.getDate();
+
+  var ro = weightLocked ? ' readonly' : '';
+  var html = '';
+  for (var day=1; day<=days; day++){
+    var entry = normalizeEntry(monthData[day]);
+    var jinVal = entry.jin != null ? entry.jin.toFixed(1) : '';
+    var waistVal = entry.waist != null ? entry.waist.toFixed(1) : '';
+    var isToday = (year === tY && month === tM && day === tD);
+    var cls = isToday ? ' class="today-cell"' : '';
+    html += '<tr' + cls + '>' +
+      '<td><span class="day-num">' + day + '</span></td>' +
+      '<td><input type="number" inputmode="decimal" class="w-input' + (jinVal ? ' filled' : '') + '" data-day="' + day + '" data-type="jin" value="' + jinVal + '" placeholder="—" step="0.1" min="0"' + ro + '></td>' +
+      '<td><input type="number" inputmode="decimal" class="w-input' + (waistVal ? ' filled-waist' : '') + '" data-day="' + day + '" data-type="waist" value="' + waistVal + '" placeholder="—" step="0.1" min="0"' + ro + '></td>' +
+    '</tr>';
+  }
+  $('weightBody').innerHTML = html;
+  updateWeightStats();
+}
+
+var weightSaveTimer = null;
+$('weightBody').addEventListener('input', function(e){
+  if (weightLocked) return;
+  var input = e.target;
+  if (!input.classList || !input.classList.contains('w-input')) return;
+  var day = input.getAttribute('data-day');
+  var type = input.getAttribute('data-type');
+  var raw = input.value.trim();
+  var monthKey = weightYear + '-' + pad(weightMonth);
+  var wd = appData.weightData = appData.weightData || {};
+  if (!wd[monthKey]) wd[monthKey] = {};
+  var entry = normalizeEntry(wd[monthKey][day]);
+
+  if (raw === ''){ if (type === 'jin') entry.jin = null; else entry.waist = null; }
+  else {
+    var num = parseFloat(raw);
+    if (Number.isFinite(num) && num > 0){ if (type === 'jin') entry.jin = num; else entry.waist = num; }
+    else { if (type === 'jin') entry.jin = null; else entry.waist = null; }
+  }
+  if (entry.jin == null && entry.waist == null) delete wd[monthKey][day];
+  else wd[monthKey][day] = entry;
+
+  if (type === 'jin') input.classList.toggle('filled', entry.jin != null);
+  else input.classList.toggle('filled-waist', entry.waist != null);
+
+  clearTimeout(weightSaveTimer);
+  weightSaveTimer = setTimeout(function(){
+    saveCloud({ weightData: appData.weightData });
+    updateWeightStats(); renderMonthTabs();
+  }, 300);
+});
+
+function updateWeightStats(){
+  var monthKey = weightYear + '-' + pad(weightMonth);
+  var data = appData.weightData || {};
+  var monthData = data[monthKey] || {};
+  var days = daysInMonth(weightYear, weightMonth);
+  var entries = Object.keys(monthData).map(function(k){ return Object.assign({day: Number(k)}, normalizeEntry(monthData[k])); }).filter(function(e){ return Number.isFinite(e.day); });
+
+  if (!entries.length){ $('weightStats').innerHTML = '<span>' + weightYear + ' 年 ' + weightMonth + ' 月 · 暂无记录</span>'; return; }
+  var jinEntries = entries.filter(function(e){ return e.jin != null && e.jin > 0; });
+  var waistEntries = entries.filter(function(e){ return e.waist != null && e.waist > 0; });
+  var recordedDays = entries.filter(function(e){ return (e.jin != null && e.jin > 0) || (e.waist != null && e.waist > 0); }).length;
+
+  var html = '<span>已记录 <b>' + recordedDays + '</b> 天 / ' + days + ' 天</span>';
+  if (jinEntries.length){
+    var avgJin = jinEntries.reduce(function(s,e){return s+e.jin;}, 0) / jinEntries.length;
+    html += '<span>平均 <b>' + avgJin.toFixed(1) + '</b> 斤</span>';
+    jinEntries.sort(function(a,b){return a.day-b.day;});
+    var latest = jinEntries[jinEntries.length-1];
+    html += '<span>最新 ' + weightMonth + '/' + latest.day + ' <b>' + latest.jin.toFixed(1) + '</b> 斤</span>';
+  }
+  if (waistEntries.length){
+    var avgWaist = waistEntries.reduce(function(s,e){return s+e.waist;}, 0) / waistEntries.length;
+    html += '<span>平均腰围 <b>' + avgWaist.toFixed(1) + '</b> cm</span>';
+  }
+  $('weightStats').innerHTML = html;
+}
+
+function renderHistory(newRowId){
+  var list = appData.history || [];
+  var tbody = $('histBody'), table = $('histTable'), empty = $('histEmpty'), countEl = $('histCount');
+  countEl.textContent = list.length ? '· ' + list.length + ' 条' : '';
+  if (!list.length){
+    tbody.innerHTML = ''; table.style.display = 'none'; empty.style.display = 'block'; return;
+  }
+  table.style.display = ''; empty.style.display = 'none';
+  tbody.innerHTML = list.map(function(r){
+    var jin = (r.kg != null) ? (Number(r.kg) * 2).toFixed(1) : '—';
+    var w = (r.waist != null) ? Number(r.waist).toFixed(1) : '—';
+    var bmiStr = (r.bmi != null) ? Number(r.bmi).toFixed(1) : '—';
+    var rfStr = '—', rfColor = '#cbd5e1';
+    if (r.rfm != null){ var c = classify(r.rfm, r.gender); rfStr = Number(r.rfm).toFixed(1) + '%'; rfColor = c.color; }
+    var nvStr = '—', nvColor = '#cbd5e1';
+    if (r.navy != null){ var c2 = classify(r.navy, r.gender); nvStr = Number(r.navy).toFixed(1) + '%'; nvColor = c2.color; }
+    var isNew = (newRowId && String(r.id) === String(newRowId)) ? ' class="new-row"' : '';
+    var timeStr = r.time || '—';
+    return '<tr' + isNew + '>' +
+      '<td>' + (r.date || '—') + '</td>' +
+      '<td class="time-cell">' + timeStr + '</td>' +
+      '<td class="num">' + jin + '</td>' +
+      '<td class="num">' + w + '</td>' +
+      '<td class="num">' + bmiStr + '</td>' +
+      '<td class="num" style="color:' + rfColor + '">' + rfStr + '</td>' +
+      '<td class="num" style="color:' + nvColor + '">' + nvStr + '</td>' +
+      '<td><button class="del" data-id="' + r.id + '" type="button">删除</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function markError(id){
+  var el = $(id); if (!el) return;
+  el.classList.add('error'); setTimeout(function(){ el.classList.remove('error'); }, 1800);
+}
+
+function doSave(){
+  var genderEl = document.querySelector('input[name="gender"]:checked');
+  var gender = genderEl ? genderEl.value : 'male';
+  var height = pf($('height').value), waist = pf($('waist').value);
+  var neck = pf($('neck').value), hip = pf($('hip').value);
+  var kg = pf($('weightKg').value), jin = pf($('weightJin').value);
+
+  if (!(height > 0)){ markError('height'); toast('请先填写身高', 'error'); $('height').focus(); return; }
+  if (!(waist > 0)){ markError('waist'); toast('请先填写腰围', 'error'); $('waist').focus(); return; }
+  if (gender === 'female' && neck > 0 && !(hip > 0)){ markError('hip'); toast('女性需填臀围', 'error'); $('hip').focus(); return; }
+
+  var list = appData.history || [];
+  var dateStr = $('date').value || '';
+  if (dateStr && jin > 0){
+    for (var i=0; i<list.length; i++){
+      var r = list[i];
+      if (r.date === dateStr && r.kg != null && Math.abs(Number(r.kg) * 2 - jin) < 0.05){
+        $('dupModal').style.display = 'flex';
+        return;
+      }
+    }
+  }
+
+  var rfm = calcRFM(gender, height, waist);
+  var navy = calcNavy(gender, height, waist, neck, hip);
+  var bmi = calcBMI(kg, height);
+  var now = new Date();
+  var timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+  var rec = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    date: dateStr, time: timeStr, gender: gender,
+    kg: kg, height: height, waist: waist, neck: neck, hip: hip,
+    age: pf($('age').value), bmi: bmi, rfm: rfm, navy: navy, ts: Date.now()
+  };
+
+  list.unshift(rec);
+  appData.history = list.slice(0, 500);
+
+  if (currentMode === 'chen'){
+    appData.chenProfile = {
+      height: $('height').value, age: $('age').value,
+      waist: $('waist').value, neck: $('neck').value
+    };
+    appData.chenLastJin = $('weightJin').value;
+
+    if (dateStr){
+      var parts = dateStr.split('-');
+      var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+      if (y && m && d){
+        var key = y + '-' + pad(m);
+        var wd = appData.weightData = appData.weightData || {};
+        if (!wd[key]) wd[key] = {};
+        var entry = normalizeEntry(wd[key][d]);
+        if (jin > 0) entry.jin = jin;
+        if (waist > 0) entry.waist = waist;
+        if (entry.jin == null && entry.waist == null) delete wd[key][d];
+        else wd[key][d] = entry;
+        if (weightYear === y && weightMonth === m) renderWeightTable();
+        else renderMonthTabs();
+      }
+    }
+  }
+
+  saveCloud({
+    history: appData.history,
+    weightData: appData.weightData,
+    chenProfile: appData.chenProfile,
+    chenLastJin: appData.chenLastJin
+  });
+
+  renderHistory(rec.id);
+  var msg = '已保存';
+  if (currentMode === 'chen' && jin > 0) msg = '已保存 · 体重已同步';
+  else if (navy === null) msg = '已保存（仅RFM有效）';
+  toast(msg, 'success');
+}
+
+$('saveBtn').addEventListener('click', function(){
+  var height = pf($('height').value), waist = pf($('waist').value);
+  if (!(height > 0)){ markError('height'); toast('请先填写身高', 'error'); $('height').focus(); return; }
+  if (!(waist > 0)){ markError('waist'); toast('请先填写腰围', 'error'); $('waist').focus(); return; }
+  if (currentMode === 'chen'){
+    var unlocked = getUnlockedFields();
+    if (unlocked.length > 0){
+      var names = unlocked.map(function(f){ return '<span class="hl">' + FIELD_NAMES[f] + '</span>'; }).join(' ');
+      $('lockModalText').innerHTML = '以下项目未锁定：<br>' + names + '<br>是否锁定后再保存？';
+      $('lockModal').style.display = 'flex';
+      return;
+    }
+  }
+  doSave();
+});
+
+$('lockOk').addEventListener('click', function(){
+  LOCKABLE.forEach(function(fieldId){ if (!fieldLocked[fieldId]) setFieldLock(fieldId, true); });
+  saveChenProfileFromInputs();
+  $('lockModal').style.display = 'none';
+  doSave();
+});
+$('lockCancel').addEventListener('click', function(){ $('lockModal').style.display = 'none'; });
+
+$('dupOk').addEventListener('click', function(){ $('dupModal').style.display = 'none'; });
+
+$('histBody').addEventListener('click', function(e){
+  var btn = e.target.closest('.del'); if (!btn) return;
+  var id = btn.getAttribute('data-id');
+  appData.history = (appData.history || []).filter(function(r){ return String(r.id) !== String(id); });
+  saveCloud({ history: appData.history });
+  renderHistory();
+  toast('已删除');
+});
+
+$('clearHistBtn').addEventListener('click', function(){
+  if (!(appData.history || []).length){ toast('暂无记录'); return; }
+  $('confirmModal').style.display = 'flex';
+});
+$('modalOk').addEventListener('click', function(){
+  appData.history = [];
+  saveCloud({ history: [] });
+  renderHistory();
+  $('confirmModal').style.display = 'none';
+  toast('已清空历史', 'success');
+});
+$('modalCancel').addEventListener('click', function(){ $('confirmModal').style.display = 'none'; });
+
+$('resetBtn').addEventListener('click', function(){
+  var ids = (currentMode === 'chen') ? ['weightJin','weightKg'] : ['height','weightKg','weightJin','age','waist','neck','hip'];
+  ids.forEach(function(id){ var el = $(id); if (el){ el.value = ''; el.classList.remove('error'); } });
+  update(); toast('已清空');
+});
+
+$('weightLockBtn').addEventListener('click', function(){ toggleWeightLock(); });
+
+function initDateToday(){
+  var today = getTodayStr();
+  if (currentMode === 'other'){
+    var oi = appData.otherInputs || {};
+    if (oi.date){ setDateValue(oi.date); userPickedDate = true; }
+    else { setDateValue(today); userPickedDate = false; }
+  } else {
+    if (!$('date').value) setDateValue(today);
+    userPickedDate = false;
+  }
+  renderHistory(); update();
+}
+
+loadLocal();
+$('welcomeModal').style.display = 'flex';
+
+setInterval(function(){
+  if (currentMode === 'chen') updateYearSelectStyle();
+}, 60000);
+
+(async function(){
+  try {
+    var appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    var fsMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+
+    var firebaseConfig = {
+      apiKey: "AIzaSyApzRDw1B4NJdEC8itHG9Leq0iKAAPI_6c",
+      authDomain: "keepfit-c4468.firebaseapp.com",
+      projectId: "keepfit-c4468",
+      storageBucket: "keepfit-c4468.firebasestorage.app",
+      messagingSenderId: "544896599581",
+      appId: "1:544896599581:web:34fe13777b51ef73bda8f4"
+    };
+
+    var fbApp = appMod.initializeApp(firebaseConfig);
+    var db = fsMod.getFirestore(fbApp);
+    var docRef = fsMod.doc(db, 'bodyfat_data', 'main');
+
+    fsMod.enableIndexedDbPersistence(db).catch(function(){ });
+
+    cloudSaveFn = async function(partial){
+      try {
+        await fsMod.setDoc(docRef, partial, { merge: true });
+        showConn('✓ 已同步到云端', 'ok');
+      } catch(e){
+        console.error('云端保存失败:', e);
+        showConn('⚠ 云端同步失败，已存本地', 'err');
+      }
+    };
+
+    fsMod.onSnapshot(docRef, function(snap){
+      if (snap.exists()){
+        var d = snap.data();
+        appData = {
+          history: Array.isArray(d.history) ? d.history : [],
+          weightData: (d.weightData && typeof d.weightData === 'object') ? d.weightData : {},
+          chenProfile: (d.chenProfile && typeof d.chenProfile === 'object') ? d.chenProfile : {},
+          chenLastJin: d.chenLastJin || '',
+          otherInputs: (d.otherInputs && typeof d.otherInputs === 'object') ? d.otherInputs : {}
+        };
+        saveLocal(appData);
+        if (currentMode){
+          if (currentMode === 'chen'){
+            var profile = appData.chenProfile || {};
+            if (profile.height) $('height').value = profile.height;
+            if (profile.age) $('age').value = profile.age;
+            if (profile.waist) $('waist').value = profile.waist;
+            if (profile.neck) $('neck').value = profile.neck;
+            if (appData.chenLastJin){
+              $('weightJin').value = appData.chenLastJin;
+              var v = pf(appData.chenLastJin);
+              if (v !== null && v >= 0) $('weightKg').value = (v / 2).toFixed(2);
+            }
+            renderMonthTabs(); renderWeightTable();
+            applyWeightLock();
+          }
+          renderHistory(); update();
+        }
+      } else {
+        fsMod.setDoc(docRef, {
+          history: appData.history || [],
+          weightData: appData.weightData || {},
+          chenProfile: appData.chenProfile || {},
+          chenLastJin: appData.chenLastJin || '',
+          otherInputs: appData.otherInputs || {}
+        }, { merge: true }).catch(function(){});
+      }
+      showConn('✓ 云端数据已连接', 'ok');
+    }, function(err){
+      console.error('Firestore 连接失败:', err);
+      showConn('✗ 云端连接失败，使用本地缓存', 'err');
+    });
+
+  } catch(e){
+    console.warn('Firebase 加载失败，使用本地模式:', e);
+    showConn('本地模式（未连接云端）', 'err');
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
