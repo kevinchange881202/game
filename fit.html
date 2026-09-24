@@ -44,9 +44,9 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .welcome-btn.other .welcome-name{color:#334155}
 .welcome-btn.other .welcome-desc{color:#64748b}
 .input-card{padding:18px 16px;background:linear-gradient(160deg,#fff 0%,#fbfcff 55%,#f7faff 100%);border:1px solid rgba(37,99,235,.10);position:relative;overflow:hidden}
-.input-grid{display:grid;grid-template-columns:1.6fr 0.7fr 0.7fr;gap:14px 10px;position:relative;z-index:1}
+.input-grid{display:grid;grid-template-columns:1.6fr 0.525fr 0.875fr;gap:14px 10px;position:relative;z-index:1}
 .field{display:flex;flex-direction:column}
-.field>label{font-size:13px;font-weight:900;color:#475569;margin-bottom:5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field>label{font-size:15.5px;font-weight:900;color:#475569;margin-bottom:5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .field input{width:100%;padding:10px;border:1.5px solid #e4eaf2;border-radius:11px;font-size:14px;font-weight:700;font-family:inherit;color:#0f172a;background:#fff;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
 .field input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .field input.error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.14)!important}
@@ -68,10 +68,10 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .seg input{display:none}
 .seg span{display:flex;align-items:center;justify-content:center;height:100%;border-radius:8px;font-size:14px;font-weight:900;color:#64748b;transition:all .2s}
 .seg input:checked+span{background:#fff;color:#2563eb;box-shadow:0 2px 8px -3px rgba(37,99,235,.4)}
-.btn-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:16px;position:relative;z-index:1}
+.btn-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:18px;position:relative;z-index:1}
 .btn{border:none;font-family:inherit;cursor:pointer;letter-spacing:.3px;white-space:nowrap}
-.btn-save{grid-column:2;padding:13px 40px;font-size:15px;font-weight:900;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 6px 18px -8px rgba(37,99,235,.6)}
-.btn-reset{grid-column:3;justify-self:end;padding:11px 18px;font-size:12px;font-weight:800;border-radius:10px;background:#f1f5f9;color:#64748b}
+.btn-save{grid-column:2;padding:15px 48px;font-size:17px;font-weight:900;border-radius:13px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 8px 22px -8px rgba(37,99,235,.6)}
+.btn-reset{grid-column:3;justify-self:end;padding:13px 22px;font-size:14px;font-weight:800;border-radius:11px;background:#f1f5f9;color:#64748b}
 .results-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .result-card{position:relative;padding:12px 12px 14px;overflow:hidden;display:flex;flex-direction:column;margin-bottom:0;border-radius:14px}
 .result-card.bmi::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#14b8a6,#0d9488);border-radius:14px 14px 0 0}
@@ -95,7 +95,8 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .weight-card{padding:14px}
 .weight-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .weight-header h2{margin:0;font-size:17px;font-weight:900;color:#0f172a}
-.weight-year-select{padding:8px 28px 8px 12px;border:1.5px solid #e4eaf2;border-radius:10px;font-size:13px;font-weight:900;font-family:inherit;color:#0f172a;background:#fff;cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 8px center;background-size:12px}
+.weight-year-select{padding:8px 28px 8px 12px;border:1.5px solid #e4eaf2;border-radius:10px;font-size:13px;font-weight:900;font-family:inherit;color:#0f172a;background:#fff;cursor:pointer;-webkit-appearance:none;transition:background .25s,border-color .25s,color .25s;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 8px center;background-size:12px}
+.weight-year-select.is-current{background:#dcfce7;border-color:#86efac;color:#166534;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23166534' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")}
 .current-month-title{font-size:15px;font-weight:900;color:#0f172a;margin-bottom:8px;font-variant-numeric:tabular-nums}
 .month-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .month-tab{border:none;background:#f1f5f9;color:#64748b;font-size:12px;font-weight:900;font-family:inherit;padding:6px 10px;border-radius:8px;cursor:pointer;position:relative}
@@ -104,12 +105,12 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .month-tab.active.has-data::after{background:#fff}
 .weight-table{width:100%;border-collapse:collapse;table-layout:fixed}
 .weight-table tbody{display:block}
-.weight-table tr{display:grid;grid-template-columns:36px 1fr 1fr;gap:6px;align-items:center;padding:4px 2px;border-bottom:1px solid #f1f5f9}
+.weight-table tr{display:grid;grid-template-columns:36px 1fr 1fr;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid #f1f5f9}
 .weight-table tr:last-child{border-bottom:none}
 .weight-table td{padding:0;display:block;border-bottom:none}
-.day-num{display:inline-block;font-size:15px;font-weight:900;color:#334155;font-variant-numeric:tabular-nums;text-align:center;width:100%}
+.day-num{display:inline-block;font-size:19px;font-weight:900;color:#334155;font-variant-numeric:tabular-nums;text-align:center;width:100%}
 .today-cell .day-num{color:#6366f1}
-.w-input{width:100%;padding:7px 3px;border:1.5px solid transparent;border-radius:8px;font-size:15px;font-weight:900;font-family:inherit;color:#0f172a;background:#f8fafc;outline:none;text-align:center;font-variant-numeric:tabular-nums;-webkit-appearance:none}
+.w-input{width:100%;padding:7px 3px;border:1.5px solid transparent;border-radius:8px;font-size:24px;font-weight:900;font-family:inherit;color:#0f172a;background:#f8fafc;outline:none;text-align:center;font-variant-numeric:tabular-nums;-webkit-appearance:none}
 .w-input:focus{background:#fff;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .w-input.filled{background:#eff6ff;color:#1d4ed8}
 .w-input.filled-waist{background:#eff6ff;color:#16a34a}
@@ -787,18 +788,33 @@ function normalizeEntry(raw){
 function initYearSelect(){
   var sel = $('weightYear'); if (!sel) return;
   sel.innerHTML = '';
+  var realCurY = new Date().getFullYear();
   for (var y=2026; y<=2036; y++){
     var opt = document.createElement('option');
-    opt.value = y; opt.textContent = y + ' 年';
+    opt.value = y;
+    opt.textContent = y + ' 年';
     if (y === weightYear) opt.selected = true;
     sel.appendChild(opt);
   }
+  // 更新选中颜色：如果选中的年份是当前年份，显示绿色
+  updateYearSelectStyle();
   if (!sel._bound){
     sel._bound = true;
     sel.addEventListener('change', function(){
       weightYear = parseInt(this.value);
+      updateYearSelectStyle();
       renderMonthTabs(); renderWeightTable();
     });
+  }
+}
+
+function updateYearSelectStyle(){
+  var sel = $('weightYear'); if (!sel) return;
+  var realCurY = new Date().getFullYear();
+  if (weightYear === realCurY){
+    sel.classList.add('is-current');
+  } else {
+    sel.classList.remove('is-current');
   }
 }
 
@@ -1076,6 +1092,11 @@ function initDateToday(){
 
 loadLocal();
 $('welcomeModal').style.display = 'flex';
+
+/* 年份选择器：定期检查是否需要更新绿色样式（防止跨年） */
+setInterval(function(){
+  if (currentMode === 'chen') updateYearSelectStyle();
+}, 60000);
 
 (async function(){
   try {
