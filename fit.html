@@ -44,7 +44,7 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .welcome-btn.other .welcome-name{color:#334155}
 .welcome-btn.other .welcome-desc{color:#64748b}
 .input-card{padding:18px 16px;background:linear-gradient(160deg,#fff 0%,#fbfcff 55%,#f7faff 100%);border:1px solid rgba(37,99,235,.10);position:relative;overflow:hidden}
-.input-grid{display:grid;grid-template-columns:1.6fr 0.525fr 0.875fr;gap:14px 10px;position:relative;z-index:1}
+.input-grid{display:grid;grid-template-columns:1.6fr 0.4fr 1fr;gap:14px 10px;position:relative;z-index:1}
 .field{display:flex;flex-direction:column}
 .field>label{font-size:15.5px;font-weight:900;color:#475569;margin-bottom:5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .field input{width:100%;padding:10px;border:1.5px solid #e4eaf2;border-radius:11px;font-size:16.8px;font-weight:700;font-family:inherit;color:#0f172a;background:#fff;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
@@ -58,10 +58,10 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .date-icon svg{width:14px;height:14px}
 .name-display{height:52px;display:flex;align-items:center;padding:0 14px;font-size:30px;font-weight:900;color:#1e40af;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:12px;border:2px solid #bfdbfe;letter-spacing:2px}
 .lock-wrap{position:relative}
-.lock-wrap input{padding-right:34px!important}
+.lock-wrap input{padding-right:30px!important}
 .lock-wrap input.locked-input{background:#f1f5f9!important;color:#94a3b8!important;cursor:not-allowed!important;border-color:#e2e8f0!important}
 .field input.always-locked{background:#f1f5f9!important;color:#94a3b8!important;cursor:not-allowed!important;border-color:#e2e8f0!important}
-.unlock-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;background:#ef4444;box-shadow:0 2px 6px -2px rgba(239,68,68,.5);z-index:2}
+.unlock-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;background:#ef4444;box-shadow:0 2px 6px -2px rgba(239,68,68,.5);z-index:2}
 .unlock-btn.locked{background:#10b981;box-shadow:0 2px 6px -2px rgba(16,185,129,.5)}
 .seg{display:flex;background:#eef2f8;border-radius:11px;padding:4px;height:42px}
 .seg label{flex:1;cursor:pointer}
@@ -103,7 +103,6 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .weight-lock-btn.unlocked{border-color:#86efac;background:#dcfce7;color:#10b981;box-shadow:0 2px 6px -2px rgba(16,185,129,.4)}
 .weight-lock-btn:active{transform:scale(.96)}
 .current-month-title{font-size:22.5px;font-weight:900;color:#0f172a;margin-bottom:12px;font-variant-numeric:tabular-nums}
-/* 月份 4 列 × 3 行 grid */
 .month-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7.5px;margin-bottom:15px}
 .month-tab{border:none;background:#f1f5f9;color:#64748b;font-size:18px;font-weight:900;font-family:inherit;padding:9px 6px;border-radius:12px;cursor:pointer;position:relative;text-align:center;white-space:nowrap;width:100%}
 .month-tab.active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
@@ -128,7 +127,7 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .w-input::-webkit-outer-spin-button,.w-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .weight-stats{margin-top:15px;padding-top:15px;border-top:1px dashed #eef2f7;display:flex;flex-wrap:wrap;gap:7.5px 21px;font-size:17.25px;color:#94a3b8;font-weight:700}
 .weight-stats b{color:#0f172a;font-weight:900;font-size:19.5px;margin-left:4.5px}
-/* ============ 参考标准（标签在上，图表铺满） ============ */
+/* ============ 参考标准 ============ */
 .scale-card{padding:28px 14px 30.8px}
 .scale-header{display:flex;align-items:baseline;gap:12px;margin-bottom:20px;flex-wrap:wrap;padding:0 4px}
 .scale-header span:first-child{font-size:22px;font-weight:900;color:#334155}
