@@ -346,6 +346,9 @@ tr.new-row{animation:flashNew 1.6s ease-out}
 </div>
 
 <div class="modal-overlay" id="confirmModal" style="display:none"><div class="modal-box"><p>确定要清空以往所有记录吗？<br>此操作不可撤销，且不会影响每日体重记录。</p><div class="modal-btns"><button class="modal-ok" id="modalOk" type="button">确定</button><button class="modal-cancel" id="modalCancel" type="button">取消</button></div></div></div>
+
+<div class="modal-overlay" id="dupModal" style="display:none"><div class="modal-box"><p>此体重今日已记录，请勿重复</p><div class="modal-btns"><button class="modal-ok" id="dupOk" type="button" style="background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 6px 18px -8px rgba(37,99,235,.7)">确认</button></div></div></div>
+
 <div class="modal-overlay" id="lockModal" style="display:none"><div class="modal-box modal-box-large"><p id="lockModalText">以下项目未锁定，是否锁定后再保存？</p><div class="modal-btns"><button class="modal-ok" id="lockOk" type="button" style="background:linear-gradient(135deg,#10b981,#059669)">锁定并保存</button><button class="modal-cancel" id="lockCancel" type="button" style="background:linear-gradient(135deg,#64748b,#475569)">取消</button></div></div></div>
 <div class="toast" id="toast"></div>
 
@@ -1015,6 +1018,19 @@ function doSave(){
   if (!(waist > 0)){ markError('waist'); toast('请先填写腰围', 'error'); $('waist').focus(); return; }
   if (gender === 'female' && neck > 0 && !(hip > 0)){ markError('hip'); toast('女性需填臀围', 'error'); $('hip').focus(); return; }
 
+  // 重复检查：同一天 + 相同体重斤数
+  var list = appData.history || [];
+  var dateStr = $('date').value || '';
+  if (dateStr && jin > 0){
+    for (var i=0; i<list.length; i++){
+      var r = list[i];
+      if (r.date === dateStr && r.kg != null && Math.abs(Number(r.kg) * 2 - jin) < 0.05){
+        $('dupModal').style.display = 'flex';
+        return;
+      }
+    }
+  }
+
   var rfm = calcRFM(gender, height, waist);
   var navy = calcNavy(gender, height, waist, neck, hip);
   var bmi = calcBMI(kg, height);
@@ -1023,12 +1039,11 @@ function doSave(){
 
   var rec = {
     id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-    date: $('date').value || '', time: timeStr, gender: gender,
+    date: dateStr, time: timeStr, gender: gender,
     kg: kg, height: height, waist: waist, neck: neck, hip: hip,
     age: pf($('age').value), bmi: bmi, rfm: rfm, navy: navy, ts: Date.now()
   };
 
-  var list = appData.history || [];
   list.unshift(rec);
   appData.history = list.slice(0, 500);
 
@@ -1039,7 +1054,6 @@ function doSave(){
     };
     appData.chenLastJin = $('weightJin').value;
 
-    var dateStr = $('date').value;
     if (dateStr){
       var parts = dateStr.split('-');
       var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
@@ -1095,6 +1109,8 @@ $('lockOk').addEventListener('click', function(){
   doSave();
 });
 $('lockCancel').addEventListener('click', function(){ $('lockModal').style.display = 'none'; });
+
+$('dupOk').addEventListener('click', function(){ $('dupModal').style.display = 'none'; });
 
 $('histBody').addEventListener('click', function(e){
   var btn = e.target.closest('.del'); if (!btn) return;
