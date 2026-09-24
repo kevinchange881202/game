@@ -36,7 +36,6 @@
   .conn-bar.show { transform: translateY(0); }
   .conn-bar.ok { background: linear-gradient(135deg, #16a34a, #15803d); }
   .conn-bar.err { background: linear-gradient(135deg, #ef4444, #dc2626); }
-  .conn-bar.wait { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
   .header { text-align: center; margin-bottom: 18px; }
   .header h1 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: .5px; }
@@ -68,6 +67,10 @@
   .welcome-btn.other .welcome-name { color: #334155; }
   .welcome-btn.other .welcome-desc { color: #64748b; }
 
+  /* 存储警告 */
+  .storage-warn { display: none; padding: 12px 18px; margin-bottom: 14px; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #fbbf24; border-radius: 14px; font-size: 13px; font-weight: 700; color: #92400e; line-height: 1.6; }
+  .storage-warn.show { display: block; }
+
   /* 输入卡片 */
   .input-card { padding: 26px 26px 24px; background: linear-gradient(160deg, #ffffff 0%, #fbfcff 55%, #f7faff 100%); border: 1px solid rgba(37,99,235,.10); box-shadow: 0 1px 3px rgba(15,23,42,.05), 0 22px 52px -26px rgba(37,99,235,.34), inset 0 1px 0 rgba(255,255,255,.9); position: relative; overflow: hidden; }
   .input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 22px; position: relative; z-index: 1; }
@@ -76,193 +79,166 @@
   .field input { width: 100%; padding: 14px 16px; border: 1.5px solid #e4eaf2; border-radius: 13px; font-size: 17px; font-weight: 700; font-family: inherit; color: #0f172a; background: #fff; outline: none; transition: border-color .2s, box-shadow .2s; font-variant-numeric: tabular-nums; -webkit-appearance: none; appearance: none; }
   .field input::placeholder { color: #c2ccda; font-weight: 500; }
   .field input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,.12); }
-  .field input.error { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,.14) !important; animation: shake .4s; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+  .field input.error { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,.14) !important; }
   .field.field-big input { font-size: 42px !important; padding: 16px 18px !important; font-weight: 900 !important; border-radius: 15px !important; letter-spacing: -1.5px; line-height: 1.15; }
 
-  .date-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1.5px solid #e4eaf2; border-radius: 13px; background: #fff; cursor: pointer; transition: all .2s; user-select: none; }
-  .date-trigger:hover { border-color: #cbd8e8; background: #fbfcff; }
+  /* 日期选择器 */
+  .date-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1.5px solid #e4eaf2; border-radius: 13px; background: #fff; cursor: pointer; user-select: none; }
   .date-trigger.open { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,.12); }
   .date-display { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: .5px; font-variant-numeric: tabular-nums; }
-  .date-icon { flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #eff6ff; color: #2563eb; transition: all .2s; }
-  .date-trigger:hover .date-icon { background: #dbeafe; transform: scale(1.06); }
+  .date-icon { flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #eff6ff; color: #2563eb; }
   .date-icon svg { width: 20px; height: 20px; }
 
-  .date-picker-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 3500; padding: 16px; animation: fadeIn .22s ease; }
-  .date-picker-box { background: #fff; border-radius: 22px; padding: 22px 22px 20px; width: 100%; max-width: 420px; box-shadow: 0 30px 80px -16px rgba(15,23,42,.65); animation: slideUp .3s cubic-bezier(.34,1.56,.64,1); }
+  .date-picker-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 3500; padding: 16px; }
+  .date-picker-box { background: #fff; border-radius: 22px; padding: 22px 22px 20px; width: 100%; max-width: 420px; box-shadow: 0 30px 80px -16px rgba(15,23,42,.65); }
   .dp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
-  .dp-title { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: .5px; font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
-  .dp-nav { width: 42px; height: 42px; border: none; border-radius: 11px; background: #f1f5f9; color: #475569; font-size: 18px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .18s; font-family: inherit; flex-shrink: 0; }
-  .dp-nav:hover { background: #e2e8f0; color: #1e293b; transform: scale(1.06); }
+  .dp-title { font-size: 20px; font-weight: 900; color: #0f172a; font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
+  .dp-nav { width: 42px; height: 42px; border: none; border-radius: 11px; background: #f1f5f9; color: #475569; font-size: 18px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; flex-shrink: 0; }
   .dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
-  .dp-weekdays span { text-align: center; font-size: 12px; font-weight: 900; color: #94a3b8; padding: 6px 0; letter-spacing: .5px; }
+  .dp-weekdays span { text-align: center; font-size: 12px; font-weight: 900; color: #94a3b8; padding: 6px 0; }
   .dp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .dp-day { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 17px; font-weight: 800; color: #1e293b; cursor: pointer; transition: all .15s; font-variant-numeric: tabular-nums; user-select: none; }
-  .dp-day:hover { background: #eff6ff; color: #2563eb; transform: scale(1.06); }
+  .dp-day { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 17px; font-weight: 800; color: #1e293b; cursor: pointer; font-variant-numeric: tabular-nums; user-select: none; }
   .dp-day.empty { cursor: default; background: transparent; }
-  .dp-day.empty:hover { transform: none; background: transparent; }
   .dp-day.today { background: #e0e7ff; color: #4338ca; box-shadow: inset 0 0 0 2px #a5b4fc; }
-  .dp-day.selected { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 6px 16px -6px rgba(37,99,235,.7); }
-  .dp-day.selected:hover { color: #fff; transform: scale(1.08); }
+  .dp-day.selected { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
 
-  .name-display { height: 76px; display: flex; align-items: center; padding: 0 22px; font-size: 39px; font-weight: 900; color: #1e40af; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 15px; border: 2px solid #bfdbfe; letter-spacing: 4px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9); }
+  /* 姓名显示（缩小到 70%） */
+  .name-display { height: 60px; display: flex; align-items: center; padding: 0 18px; font-size: 27px; font-weight: 900; color: #1e40af; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 13px; border: 2px solid #bfdbfe; letter-spacing: 3px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9); }
 
+  /* 锁定 */
   .lock-wrap { position: relative; }
   .lock-wrap input { padding-right: 56px !important; }
   .lock-wrap input.locked-input { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border-color: #e2e8f0 !important; }
-  .lock-wrap input.locked-input:focus { box-shadow: none !important; border-color: #e2e8f0 !important; }
   .field input.always-locked { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed !important; border-color: #e2e8f0 !important; }
-  .field input.always-locked:focus { box-shadow: none !important; border-color: #e2e8f0 !important; }
-
-  .unlock-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border: none; border-radius: 11px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .22s cubic-bezier(.4,0,.2,1); z-index: 2; color: #fff; background: #ef4444; box-shadow: 0 3px 8px -2px rgba(239,68,68,.5); }
-  .unlock-btn:hover { transform: translateY(-50%) scale(1.08); }
+  .unlock-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border: none; border-radius: 11px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; color: #fff; background: #ef4444; box-shadow: 0 3px 8px -2px rgba(239,68,68,.5); }
   .unlock-btn.locked { background: #10b981; box-shadow: 0 3px 8px -2px rgba(16,185,129,.5); }
-  .unlock-btn.locked:hover { background: #059669; }
 
   .seg { display: flex; background: #eef2f8; border-radius: 13px; padding: 5px; height: 56px; }
   .seg label { flex: 1; cursor: pointer; }
   .seg input { display: none; }
-  .seg span { display: flex; align-items: center; justify-content: center; height: 100%; border-radius: 10px; font-size: 19px; font-weight: 900; color: #64748b; transition: all .22s cubic-bezier(.4,0,.2,1); letter-spacing: .5px; }
+  .seg span { display: flex; align-items: center; justify-content: center; height: 100%; border-radius: 10px; font-size: 19px; font-weight: 900; color: #64748b; }
   .seg input:checked + span { background: #fff; color: #2563eb; box-shadow: 0 3px 10px -3px rgba(37,99,235,.35); }
 
   .btn-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-top: 24px; position: relative; z-index: 1; }
-  .btn { border: none; font-family: inherit; cursor: pointer; transition: all .22s cubic-bezier(.4,0,.2,1); letter-spacing: .4px; white-space: nowrap; }
+  .btn { border: none; font-family: inherit; cursor: pointer; }
   .btn-save { grid-column: 2; padding: 18px 80px; font-size: 21px; font-weight: 900; border-radius: 15px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 8px 22px -8px rgba(37,99,235,.60); }
-  .btn-save:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -10px rgba(37,99,235,.70); }
   .btn-reset { grid-column: 3; justify-self: end; padding: 13px 28px; font-size: 14px; font-weight: 800; border-radius: 12px; background: #f1f5f9; color: #64748b; }
-  .btn-reset:hover { background: #e2e8f0; color: #475569; }
 
-  /* 结果卡 */
+  /* 结果卡（高度减半，字体等比例缩小） */
   .results-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
-  .result-card { position: relative; padding: 18px 22px 22px; overflow: hidden; display: flex; flex-direction: column; margin-bottom: 0; transition: transform .28s cubic-bezier(.4,0,.2,1), box-shadow .28s; }
-  .result-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px -6px rgba(15,23,42,.13), 0 26px 50px -22px rgba(15,23,42,.28); }
-  .result-card.bmi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #14b8a6, #0d9488, #0f766e); }
-  .result-card.rfm::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa); }
-  .result-card.navy::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #0ea5e9, #38bdf8, #7dd3fc); }
-  .rc-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
-  .rc-name { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 900; color: #334155; letter-spacing: .3px; white-space: nowrap; }
-  .rc-name .dot { width: 21px; height: 21px; border-radius: 50%; flex-shrink: 0; }
-  .dot.bmi { background: #14b8a6; box-shadow: 0 0 0 6px rgba(20,184,166,.18), 0 2px 6px rgba(20,184,166,.5); }
-  .dot.rfm { background: #6366f1; box-shadow: 0 0 0 6px rgba(99,102,241,.18), 0 2px 6px rgba(99,102,241,.5); }
-  .dot.navy { background: #0ea5e9; box-shadow: 0 0 0 6px rgba(14,165,233,.18), 0 2px 6px rgba(14,165,233,.5); }
-  .rc-tag { font-size: 24px; font-weight: 900; padding: 8px 18px; border-radius: 99px; background: #f1f5f9; color: #94a3b8; letter-spacing: .3px; white-space: nowrap; transition: background .25s, color .25s; }
-  .rc-value { font-size: 58px; font-weight: 900; line-height: 1.02; letter-spacing: -3px; color: #0f172a; font-variant-numeric: tabular-nums; margin-top: 6px; display: flex; align-items: baseline; }
-  .rc-value small { font-size: 20px; font-weight: 800; color: #a3aec0; margin-left: 4px; letter-spacing: 0; }
-  @keyframes popNum { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
-  .rc-value.pop { animation: popNum .34s cubic-bezier(.34,1.56,.64,1); }
+  .result-card { position: relative; padding: 12px 16px 14px; overflow: hidden; display: flex; flex-direction: column; margin-bottom: 0; }
+  .result-card.bmi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #14b8a6, #0d9488, #0f766e); }
+  .result-card.rfm::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa); }
+  .result-card.navy::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0ea5e9, #38bdf8, #7dd3fc); }
+  .rc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .rc-name { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 900; color: #334155; white-space: nowrap; }
+  .rc-name .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .dot.bmi { background: #14b8a6; box-shadow: 0 0 0 4px rgba(20,184,166,.18); }
+  .dot.rfm { background: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,.18); }
+  .dot.navy { background: #0ea5e9; box-shadow: 0 0 0 4px rgba(14,165,233,.18); }
+  .rc-tag { font-size: 16px; font-weight: 900; padding: 5px 12px; border-radius: 99px; background: #f1f5f9; color: #94a3b8; white-space: nowrap; }
+  .rc-value { font-size: 40px; font-weight: 900; line-height: 1; letter-spacing: -2px; color: #0f172a; font-variant-numeric: tabular-nums; margin-top: 4px; display: flex; align-items: baseline; }
+  .rc-value small { font-size: 14px; font-weight: 800; color: #a3aec0; margin-left: 3px; }
 
-  /* 汇总条：字体放大 2 倍 */
-  .summary-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 44px; padding: 20px 30px; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border: 1px solid rgba(37,99,235,.07); }
-  .summary-bar .item { display: inline-flex; align-items: baseline; gap: 12px; font-size: 25px; font-weight: 700; color: #64748b; letter-spacing: .3px; }
-  .summary-bar .item b { color: #0f172a; font-size: 34px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
-  .summary-bar .sep { width: 2px; height: 28px; background: #e8eef6; border-radius: 2px; }
+  /* 汇总条 */
+  .summary-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px; padding: 16px 30px; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border: 1px solid rgba(37,99,235,.07); }
+  .summary-bar .item { display: inline-flex; align-items: baseline; gap: 10px; font-size: 22px; font-weight: 700; color: #64748b; }
+  .summary-bar .item b { color: #0f172a; font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .summary-bar .sep { width: 2px; height: 24px; background: #e8eef6; }
 
   /* 每日体重记录 */
   .weight-card { padding: 22px 22px 20px; }
   .weight-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-  .weight-header h2 { margin: 0; font-size: 44px; font-weight: 900; color: #0f172a; letter-spacing: .5px; line-height: 1.1; }
-  .weight-year-select { padding: 12px 40px 12px 18px; border: 1.5px solid #e4eaf2; border-radius: 12px; font-size: 18px; font-weight: 900; font-family: inherit; color: #0f172a; background: #fff; cursor: pointer; outline: none; transition: all .2s; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; letter-spacing: .5px; }
-  .current-month-title { font-size: 33px; font-weight: 900; color: #0f172a; letter-spacing: .5px; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+  .weight-header h2 { margin: 0; font-size: 44px; font-weight: 900; color: #0f172a; line-height: 1.1; }
+  .weight-year-select { padding: 12px 40px 12px 18px; border: 1.5px solid #e4eaf2; border-radius: 12px; font-size: 18px; font-weight: 900; font-family: inherit; color: #0f172a; background: #fff; cursor: pointer; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
+  .current-month-title { font-size: 33px; font-weight: 900; color: #0f172a; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
   .month-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-  .month-tab { border: none; background: #f1f5f9; color: #64748b; font-size: 26px; font-weight: 900; font-family: inherit; padding: 10px 20px; border-radius: 12px; cursor: pointer; transition: all .18s; letter-spacing: .5px; position: relative; }
-  .month-tab:hover { background: #e2e8f0; color: #475569; }
-  .month-tab.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 4px 12px -4px rgba(37,99,235,.5); }
-  .month-tab.has-data::after { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-left: 6px; vertical-align: middle; }
+  .month-tab { border: none; background: #f1f5f9; color: #64748b; font-size: 18px; font-weight: 900; font-family: inherit; padding: 8px 14px; border-radius: 10px; cursor: pointer; position: relative; }
+  .month-tab.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+  .month-tab.has-data::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; margin-left: 5px; vertical-align: middle; }
   .month-tab.active.has-data::after { background: #fff; }
 
   .weight-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-  .weight-table th { padding: 10px 4px 12px; font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: .5px; text-align: center; border-bottom: 3px solid #e2e8f0; }
+  .weight-table th { padding: 10px 4px 12px; font-size: 18px; font-weight: 900; color: #0f172a; text-align: center; border-bottom: 3px solid #e2e8f0; }
   .weight-table td { padding: 5px 4px; text-align: center; vertical-align: middle; border-bottom: 1px solid #f8fafc; }
   .weight-table tbody tr:last-child td { border-bottom: none; }
-  .day-num { display: inline-block; font-size: 25px; font-weight: 900; color: #334155; font-variant-numeric: tabular-nums; min-width: 34px; transition: color .18s; }
+  .day-num { display: inline-block; font-size: 13px; font-weight: 900; color: #334155; font-variant-numeric: tabular-nums; min-width: 18px; }
   .today-cell .day-num { color: #6366f1; }
-  .w-input { width: 100%; padding: 10px 4px; border: 1.5px solid transparent; border-radius: 9px; font-size: 29px; font-weight: 900; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; text-align: center; transition: all .18s; font-variant-numeric: tabular-nums; -webkit-appearance: none; appearance: none; }
-  .w-input::placeholder { color: #d4dce6; font-weight: 500; }
-  .w-input:hover { background: #f1f5f9; }
+  .w-input { width: 100%; padding: 8px 4px; border: 1.5px solid transparent; border-radius: 9px; font-size: 22px; font-weight: 900; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; text-align: center; font-variant-numeric: tabular-nums; -webkit-appearance: none; appearance: none; }
   .w-input:focus { background: #fff; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
   .w-input.filled { background: #eff6ff; color: #1d4ed8; }
   /* 腰围：深底 + 亮黄字 */
   .w-input.filled-waist { background: #1e293b; color: #facc15; }
-  .today-cell .w-input { background: rgba(99,102,241,.08); }
-  .today-cell .w-input:focus { background: #fff; }
   .w-input::-webkit-outer-spin-button, .w-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .w-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
-  .weight-stats { margin-top: 16px; padding-top: 14px; border-top: 1px dashed #eef2f7; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 20px; color: #94a3b8; font-weight: 700; letter-spacing: .3px; }
-  .weight-stats b { color: #0f172a; font-weight: 900; font-size: 22px; font-variant-numeric: tabular-nums; margin-left: 4px; }
+  .weight-stats { margin-top: 16px; padding-top: 14px; border-top: 1px dashed #eef2f7; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 18px; color: #94a3b8; font-weight: 700; }
+  .weight-stats b { color: #0f172a; font-weight: 900; font-size: 20px; margin-left: 4px; }
 
   /* 参考标准 */
   .scale-card { padding: 16px 22px 20px; }
   .scale-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-  .scale-header span:first-child { font-size: 13px; font-weight: 900; color: #334155; letter-spacing: .5px; }
-  .scale-header span:last-child { font-size: 11px; color: #b0b9c5; font-weight: 700; letter-spacing: .3px; }
+  .scale-header span:first-child { font-size: 13px; font-weight: 900; color: #334155; }
+  .scale-header span:last-child { font-size: 11px; color: #b0b9c5; font-weight: 700; }
   .scale-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
   .scale-row:last-child { margin-bottom: 2px; }
-  .scale-label { width: 84px; flex-shrink: 0; font-size: 12px; font-weight: 900; color: #64748b; text-align: right; letter-spacing: .3px; white-space: nowrap; padding-top: 2px; }
+  .scale-label { width: 84px; flex-shrink: 0; font-size: 12px; font-weight: 900; color: #64748b; text-align: right; white-space: nowrap; padding-top: 2px; }
   .scale-track-wrap { flex: 1; position: relative; padding: 10px 0 14px; }
-  .scale-track { position: relative; display: flex; height: 16px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(15,23,42,.05); overflow: visible; }
-  .scale-seg { height: 100%; transition: filter .18s; }
-  .scale-seg:hover { filter: brightness(1.08); }
+  .scale-track { position: relative; display: flex; height: 16px; border-radius: 6px; }
+  .scale-seg { height: 100%; }
   .scale-seg:first-child { border-radius: 6px 0 0 6px; }
   .scale-seg:last-child { border-radius: 0 6px 6px 0; }
   .scale-ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; pointer-events: none; }
-  .tick { position: absolute; transform: translateX(-50%); font-size: 9.5px; font-weight: 800; color: #b8c2ce; font-variant-numeric: tabular-nums; letter-spacing: .2px; }
-  .marker { position: absolute; top: 50%; width: 8px; height: 30px; border-radius: 5px; border: 2.5px solid #fff; transform: translate(-50%, -50%); transition: left .32s cubic-bezier(.4,0,.2,1); z-index: 3; pointer-events: none; }
-  .marker.bmi { background: #14b8a6; box-shadow: 0 3px 12px rgba(20,184,166,.6), 0 0 0 1px rgba(20,184,166,.3); }
-  .marker.rfm { background: #6366f1; box-shadow: 0 3px 12px rgba(99,102,241,.6), 0 0 0 1px rgba(99,102,241,.3); }
-  .marker.navy { background: #0ea5e9; box-shadow: 0 3px 12px rgba(14,165,233,.6), 0 0 0 1px rgba(14,165,233,.3); }
-  .bmi-status-block { margin-top: 10px; padding: 12px 18px; border-radius: 12px; font-size: 15px; font-weight: 900; letter-spacing: .5px; text-align: center; transition: background .3s, color .3s; background: #f1f5f9; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  .tick { position: absolute; transform: translateX(-50%); font-size: 9.5px; font-weight: 800; color: #b8c2ce; font-variant-numeric: tabular-nums; }
+  .marker { position: absolute; top: 50%; width: 8px; height: 30px; border-radius: 5px; border: 2.5px solid #fff; transform: translate(-50%, -50%); transition: left .32s; z-index: 3; pointer-events: none; }
+  .marker.bmi { background: #14b8a6; box-shadow: 0 3px 12px rgba(20,184,166,.6); }
+  .marker.rfm { background: #6366f1; box-shadow: 0 3px 12px rgba(99,102,241,.6); }
+  .marker.navy { background: #0ea5e9; box-shadow: 0 3px 12px rgba(14,165,233,.6); }
+  .bmi-status-block { margin-top: 10px; padding: 12px 18px; border-radius: 12px; font-size: 15px; font-weight: 900; text-align: center; background: #f1f5f9; color: #94a3b8; }
 
   /* 历史记录 */
   .history-card { padding: 18px 22px 16px; overflow-x: auto; }
   .hist-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
-  .hist-head h2 { margin: 0; font-size: 15px; font-weight: 900; color: #334155; letter-spacing: .5px; }
-  .btn-clear-all { border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-size: 14px; font-weight: 900; font-family: inherit; padding: 11px 22px; border-radius: 11px; cursor: pointer; letter-spacing: .5px; box-shadow: 0 6px 18px -8px rgba(239,68,68,.70); transition: all .22s cubic-bezier(.4,0,.2,1); }
-  .btn-clear-all:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(239,68,68,.80); background: linear-gradient(135deg, #dc2626, #b91c1c); }
+  .hist-head h2 { margin: 0; font-size: 15px; font-weight: 900; color: #334155; }
+  .btn-clear-all { border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-size: 14px; font-weight: 900; font-family: inherit; padding: 11px 22px; border-radius: 11px; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(239,68,68,.70); }
   .hist-table { width: 100%; border-collapse: collapse; font-size: 20px; min-width: 680px; }
   .hist-table th, .hist-table td { padding: 11px 6px; text-align: left; border-bottom: 1px solid #f1f5f9; }
-  .hist-table th { font-size: 15px; font-weight: 900; color: #b0b9c5; letter-spacing: .3px; text-transform: uppercase; padding-top: 0; padding-bottom: 9px; }
-  .hist-table tbody tr { transition: background .15s; }
-  .hist-table tbody tr:hover { background: #f8fafc; }
+  .hist-table th { font-size: 15px; font-weight: 900; color: #b0b9c5; text-transform: uppercase; padding-top: 0; padding-bottom: 9px; }
   .hist-table tbody tr:last-child td { border-bottom: none; }
   .hist-table td.num { font-variant-numeric: tabular-nums; font-weight: 800; color: #1e293b; }
-  .hist-table td.time-cell { color: #2563eb; font-weight: 900; font-variant-numeric: tabular-nums; }
-  @keyframes flashNew { 0%{background:rgba(34,197,94,.25)} 100%{background:transparent} }
-  tr.new-row { animation: flashNew 1.6s ease-out; }
-  .del { border: none; background: transparent; color: #cbd5e1; font-size: 13px; font-family: inherit; font-weight: 800; cursor: pointer; padding: 5px 9px; border-radius: 7px; transition: all .15s; }
+  .hist-table td.time-cell { color: #2563eb; font-weight: 900; }
+  .del { border: none; background: transparent; color: #cbd5e1; font-size: 13px; font-family: inherit; font-weight: 800; cursor: pointer; padding: 5px 9px; border-radius: 7px; }
   .del:hover { background: #fee2e2; color: #dc2626; }
   .empty { color: #c2ccda; font-size: 13.5px; font-weight: 600; text-align: center; padding: 22px 0; }
 
-  .disclaimer { margin-top: 22px; font-size: 11.5px; color: #a8b3c1; line-height: 1.8; text-align: center; font-weight: 500; }
+  .disclaimer { margin-top: 22px; font-size: 11.5px; color: #a8b3c1; line-height: 1.8; text-align: center; }
 
   /* 弹窗 */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.55); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 3600; padding: 20px; animation: fadeIn .2s ease; }
-  .modal-box { background: #fff; border-radius: 20px; padding: 26px 26px 22px; max-width: 440px; width: 100%; box-shadow: 0 28px 70px -14px rgba(15,23,42,.55); animation: slideUp .28s cubic-bezier(.34,1.56,.64,1); }
-  .modal-box p { margin: 0 0 20px; font-size: 16px; font-weight: 800; color: #1e293b; text-align: center; line-height: 1.6; letter-spacing: .3px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.55); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 3600; padding: 20px; }
+  .modal-box { background: #fff; border-radius: 20px; padding: 26px 26px 22px; max-width: 440px; width: 100%; box-shadow: 0 28px 70px -14px rgba(15,23,42,.55); }
+  .modal-box p { margin: 0 0 20px; font-size: 16px; font-weight: 800; color: #1e293b; text-align: center; line-height: 1.6; }
   .modal-box p .hl { color: #2563eb; background: #eff6ff; padding: 2px 8px; border-radius: 6px; display: inline-block; margin: 4px 2px; }
   .modal-btns { display: flex; gap: 12px; }
-  .modal-btns button { flex: 1; padding: 14px 0; border: none; border-radius: 13px; font-size: 15px; font-weight: 900; font-family: inherit; cursor: pointer; transition: all .2s cubic-bezier(.4,0,.2,1); letter-spacing: .5px; }
-  .modal-ok { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 6px 18px -8px rgba(239,68,68,.70); }
-  .modal-ok:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(239,68,68,.85); }
-  .modal-cancel { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 6px 18px -8px rgba(37,99,235,.70); }
-  .modal-cancel:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(37,99,235,.85); }
+  .modal-btns button { flex: 1; padding: 14px 0; border: none; border-radius: 13px; font-size: 15px; font-weight: 900; font-family: inherit; cursor: pointer; }
+  .modal-ok { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+  .modal-cancel { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
   .modal-box.modal-box-large { max-width: 660px; padding: 39px 39px 33px; border-radius: 30px; }
   .modal-box.modal-box-large p { font-size: 24px; margin-bottom: 30px; line-height: 1.7; }
   .modal-box.modal-box-large p .hl { padding: 4px 14px; border-radius: 9px; margin: 6px 4px; font-size: 26px; }
   .modal-box.modal-box-large .modal-btns { gap: 18px; }
   .modal-box.modal-box-large .modal-btns button { padding: 22px 0; font-size: 22px; border-radius: 18px; }
 
-  .toast { position: fixed; left: 50%; top: 28px; transform: translate(-50%, -18px); background: #0f172a; color: #fff; font-size: 15px; font-weight: 800; padding: 14px 28px; border-radius: 14px; opacity: 0; pointer-events: none; transition: opacity .28s, transform .28s; box-shadow: 0 16px 44px -12px rgba(15,23,42,.65); z-index: 5000; letter-spacing: .3px; max-width: 90vw; text-align: center; line-height: 1.5; }
+  .toast { position: fixed; left: 50%; top: 28px; transform: translate(-50%, -18px); background: #0f172a; color: #fff; font-size: 15px; font-weight: 800; padding: 14px 28px; border-radius: 14px; opacity: 0; pointer-events: none; transition: opacity .28s, transform .28s; z-index: 5000; max-width: 90vw; text-align: center; }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
   .toast.success { background: linear-gradient(135deg, #16a34a, #15803d); }
   .toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
   /* 响应式 */
   @media (max-width: 900px) {
-    .rc-name { font-size: 20px; }
-    .rc-name .dot { width: 17px; height: 17px; }
-    .rc-tag { font-size: 18px; padding: 6px 14px; }
-    .rc-value { font-size: 50px; }
+    .rc-name { font-size: 16px; }
+    .rc-name .dot { width: 12px; height: 12px; }
+    .rc-tag { font-size: 14px; padding: 4px 10px; }
+    .rc-value { font-size: 32px; }
     .summary-bar .item { font-size: 18px; }
     .summary-bar .item b { font-size: 24px; }
   }
@@ -274,7 +250,7 @@
     .field > label { font-size: 18px; margin-bottom: 6px; }
     .field input { padding: 12px 14px; font-size: 16px; }
     .field.field-big input { font-size: 36px !important; padding: 14px 16px !important; }
-    .name-display { font-size: 30px; height: 62px; letter-spacing: 3px; padding: 0 18px; }
+    .name-display { font-size: 19px; height: 42px; letter-spacing: 2px; padding: 0 12px; }
     .seg { height: 50px; }
     .seg span { font-size: 17px; }
     .unlock-btn { width: 36px; height: 36px; font-size: 16px; }
@@ -286,33 +262,32 @@
     .btn-save { grid-column: 1; padding: 16px 0; width: 100%; font-size: 18px; }
     .btn-reset { grid-column: 1; justify-self: stretch; width: 100%; padding: 12px 0; font-size: 14px; }
     .results-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
-    .rc-name { font-size: 22px; gap: 10px; }
-    .rc-name .dot { width: 19px; height: 19px; }
-    .rc-tag { font-size: 20px; padding: 7px 15px; }
-    .rc-value { font-size: 52px; }
-    .rc-value small { font-size: 18px; }
+    .rc-name { font-size: 16px; gap: 8px; }
+    .rc-name .dot { width: 12px; height: 12px; }
+    .rc-tag { font-size: 14px; padding: 4px 10px; }
+    .rc-value { font-size: 32px; }
+    .rc-value small { font-size: 12px; }
     .summary-bar { padding: 14px 18px; gap: 10px 24px; }
-    .summary-bar .item { font-size: 17px; gap: 8px; }
-    .summary-bar .item b { font-size: 22px; }
+    .summary-bar .item { font-size: 15px; gap: 7px; }
+    .summary-bar .item b { font-size: 20px; }
     .weight-card { padding: 18px 14px 16px; }
-    .weight-header h2 { font-size: 32px; }
+    .weight-header h2 { font-size: 28px; }
     .weight-year-select { font-size: 15px; padding: 10px 34px 10px 14px; }
-    .current-month-title { font-size: 26px; }
+    .current-month-title { font-size: 22px; }
     .month-tabs { gap: 6px; margin-bottom: 14px; }
-    .month-tab { font-size: 20px; padding: 8px 14px; border-radius: 10px; }
+    .month-tab { font-size: 14px; padding: 6px 10px; border-radius: 8px; }
     .weight-table colgroup { display: none; }
     .weight-table thead { display: none; }
     .weight-table, .weight-table tbody { display: block; }
-    .weight-table tr { display: grid; grid-template-columns: 50px 1fr 1fr; gap: 8px; align-items: center; padding: 6px 4px; border-bottom: 1px solid #f1f5f9; }
+    .weight-table tr { display: grid; grid-template-columns: 34px 1fr 1fr; gap: 6px; align-items: center; padding: 4px 3px; border-bottom: 1px solid #f1f5f9; }
     .weight-table tr:last-child { border-bottom: none; }
     .weight-table td { padding: 0; display: block; border-bottom: none; }
-    .weight-table td:first-child { text-align: left; }
-    .day-num { font-size: 22px; min-width: 30px; }
-    .w-input { font-size: 26px; padding: 9px 4px; }
+    .weight-table td:first-child { text-align: center; }
+    .day-num { font-size: 11px; min-width: 14px; }
+    .w-input { font-size: 16px; padding: 6px 3px; }
     .weight-table td:empty { display: none; }
-    .weight-table tr > td:nth-child(3n+1) { text-align: center; }
-    .weight-stats { font-size: 17px; gap: 6px 16px; }
-    .weight-stats b { font-size: 18px; }
+    .weight-stats { font-size: 14px; gap: 6px 14px; }
+    .weight-stats b { font-size: 15px; }
     .scale-card { padding: 14px 14px 16px; }
     .scale-label { width: 62px; font-size: 10.5px; }
     .bmi-status-block { font-size: 14px; padding: 10px 14px; }
@@ -339,13 +314,13 @@
     .modal-box.modal-box-large .modal-btns button { padding: 16px 0; font-size: 17px; border-radius: 14px; }
   }
   @media (max-width: 380px) {
-    .weight-header h2 { font-size: 26px; }
-    .current-month-title { font-size: 22px; }
-    .month-tab { font-size: 17px; padding: 7px 11px; }
-    .day-num { font-size: 19px; min-width: 26px; }
-    .w-input { font-size: 22px; padding: 8px 3px; }
-    .weight-table tr { grid-template-columns: 42px 1fr 1fr; gap: 6px; }
-    .rc-value { font-size: 46px; }
+    .weight-header h2 { font-size: 24px; }
+    .current-month-title { font-size: 20px; }
+    .month-tab { font-size: 13px; padding: 6px 9px; }
+    .day-num { font-size: 10px; min-width: 12px; }
+    .w-input { font-size: 14px; padding: 5px 2px; }
+    .weight-table tr { grid-template-columns: 30px 1fr 1fr; gap: 5px; }
+    .rc-value { font-size: 28px; }
   }
 </style>
 </head>
@@ -354,17 +329,17 @@
 <div class="conn-bar" id="connBar"></div>
 
 <!-- 欢迎弹窗 -->
-<div class="welcome-overlay" id="welcomeModal" style="display:none">
+<div class="welcome-overlay" id="welcomeModal">
   <div class="welcome-box">
     <h2>欢迎使用体脂率计算器</h2>
     <p class="welcome-sub">请选择使用者身份</p>
     <div class="welcome-btns">
-      <button class="welcome-btn chen" id="chooseChen">
+      <button class="welcome-btn chen" id="chooseChen" type="button">
         <div class="welcome-avatar">陈</div>
         <div class="welcome-name">陈柳江</div>
         <div class="welcome-desc">常用模式 · 数据锁定</div>
       </button>
-      <button class="welcome-btn other" id="chooseOther">
+      <button class="welcome-btn other" id="chooseOther" type="button">
         <div class="welcome-avatar">👥</div>
         <div class="welcome-name">非本人</div>
         <div class="welcome-desc">临时使用 · 自由填写</div>
@@ -377,11 +352,11 @@
 <div class="date-picker-overlay" id="datePickerModal" style="display:none">
   <div class="date-picker-box">
     <div class="dp-head">
-      <button class="dp-nav" id="dpPrevYear">«</button>
-      <button class="dp-nav" id="dpPrevMonth">‹</button>
+      <button class="dp-nav" id="dpPrevYear" type="button">«</button>
+      <button class="dp-nav" id="dpPrevMonth" type="button">‹</button>
       <div class="dp-title" id="dpTitle">2026年9月</div>
-      <button class="dp-nav" id="dpNextMonth">›</button>
-      <button class="dp-nav" id="dpNextYear">»</button>
+      <button class="dp-nav" id="dpNextMonth" type="button">›</button>
+      <button class="dp-nav" id="dpNextYear" type="button">»</button>
     </div>
     <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
     <div class="dp-days" id="dpDays"></div>
@@ -389,7 +364,6 @@
 </div>
 
 <div class="wrap" id="mainWrap" style="display:none">
-
   <header class="header">
     <h1>体脂率<span>计算器</span></h1>
     <p id="headerSub">RFM 公式 · 美国海军围度法</p>
@@ -408,102 +382,41 @@
       <div class="field" id="dateField">
         <label>记录日期</label>
         <input type="hidden" id="date">
-        <div class="date-trigger" id="dateTrigger" tabindex="0">
+        <div class="date-trigger" id="dateTrigger">
           <span class="date-display" id="dateDisplay">--</span>
-          <span class="date-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          </span>
+          <span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
         </div>
       </div>
-      <div class="field" id="heightField">
-        <label>身高 (cm)</label>
-        <div class="lock-wrap">
-          <input type="number" id="height" placeholder="例如 175" step="0.1" min="0">
-          <button class="unlock-btn" id="unlockHeight" style="display:none" title="点击解锁/锁定">🔒</button>
-        </div>
-      </div>
-      <div class="field field-big" id="weightJinField">
-        <label>体重 (斤)</label>
-        <input type="number" id="weightJin" class="jin-input" placeholder="例如 140" step="0.1" min="0">
-      </div>
-      <div class="field" id="waistField">
-        <label>腰围 (cm)</label>
-        <div class="lock-wrap">
-          <input type="number" id="waist" placeholder="例如 80" step="0.1" min="0">
-          <button class="unlock-btn" id="unlockWaist" style="display:none" title="点击解锁/锁定">🔒</button>
-        </div>
-      </div>
-      <div class="field" id="ageField">
-        <label>年龄（岁）</label>
-        <div class="lock-wrap">
-          <input type="number" id="age" placeholder="例如 30" step="1" min="0">
-          <button class="unlock-btn" id="unlockAge" style="display:none" title="点击解锁/锁定">🔒</button>
-        </div>
-      </div>
-      <div class="field" id="weightKgField">
-        <label>体重 (kg)</label>
-        <input type="number" id="weightKg" placeholder="例如 70" step="0.1" min="0">
-      </div>
-      <div class="field" id="neckField">
-        <label>颈围 (cm)</label>
-        <div class="lock-wrap">
-          <input type="number" id="neck" placeholder="例如 37" step="0.1" min="0">
-          <button class="unlock-btn" id="unlockNeck" style="display:none" title="点击解锁/锁定">🔒</button>
-        </div>
-      </div>
-      <div class="field" id="hipField" style="display:none">
-        <label>臀围 (cm)</label>
-        <input type="number" id="hip" placeholder="例如 95" step="0.1" min="0">
-      </div>
+      <div class="field" id="heightField"><label>身高 (cm)</label><div class="lock-wrap"><input type="number" id="height" placeholder="175" step="0.1" min="0"><button class="unlock-btn" id="unlockHeight" style="display:none" type="button">🔒</button></div></div>
+      <div class="field field-big" id="weightJinField"><label>体重 (斤)</label><input type="number" id="weightJin" placeholder="140" step="0.1" min="0"></div>
+      <div class="field" id="waistField"><label>腰围 (cm)</label><div class="lock-wrap"><input type="number" id="waist" placeholder="80" step="0.1" min="0"><button class="unlock-btn" id="unlockWaist" style="display:none" type="button">🔒</button></div></div>
+      <div class="field" id="ageField"><label>年龄</label><div class="lock-wrap"><input type="number" id="age" placeholder="30" step="1" min="0"><button class="unlock-btn" id="unlockAge" style="display:none" type="button">🔒</button></div></div>
+      <div class="field" id="weightKgField"><label>体重 (kg)</label><input type="number" id="weightKg" placeholder="70" step="0.1" min="0"></div>
+      <div class="field" id="neckField"><label>颈围 (cm)</label><div class="lock-wrap"><input type="number" id="neck" placeholder="37" step="0.1" min="0"><button class="unlock-btn" id="unlockNeck" style="display:none" type="button">🔒</button></div></div>
+      <div class="field" id="hipField" style="display:none"><label>臀围 (cm)</label><input type="number" id="hip" placeholder="95" step="0.1" min="0"></div>
     </div>
     <div class="btn-row">
-      <button class="btn btn-save" id="saveBtn">保存记录</button>
-      <button class="btn btn-reset" id="resetBtn">清空输入</button>
+      <button class="btn btn-save" id="saveBtn" type="button">保存记录</button>
+      <button class="btn btn-reset" id="resetBtn" type="button">清空</button>
     </div>
   </section>
 
   <section class="results-grid">
-    <div class="card result-card bmi">
-      <div class="rc-head">
-        <div class="rc-name"><span class="dot bmi"></span>BMI</div>
-        <div class="rc-tag" id="bmiTag">等待输入</div>
-      </div>
-      <div class="rc-value" id="bmiValueBox"><span id="bmiVal">--</span></div>
-    </div>
-    <div class="card result-card rfm">
-      <div class="rc-head">
-        <div class="rc-name"><span class="dot rfm"></span>RFM 公式</div>
-        <div class="rc-tag" id="rfmTag">等待输入</div>
-      </div>
-      <div class="rc-value" id="rfmValueBox"><span id="rfmVal">--</span><small>%</small></div>
-    </div>
-    <div class="card result-card navy">
-      <div class="rc-head">
-        <div class="rc-name"><span class="dot navy"></span>海军围度法</div>
-        <div class="rc-tag" id="navyTag">等待输入</div>
-      </div>
-      <div class="rc-value" id="navyValueBox"><span id="navyVal">--</span><small>%</small></div>
-    </div>
+    <div class="card result-card bmi"><div class="rc-head"><div class="rc-name"><span class="dot bmi"></span>BMI</div><div class="rc-tag" id="bmiTag">等待</div></div><div class="rc-value" id="bmiValueBox"><span id="bmiVal">--</span></div></div>
+    <div class="card result-card rfm"><div class="rc-head"><div class="rc-name"><span class="dot rfm"></span>RFM</div><div class="rc-tag" id="rfmTag">等待</div></div><div class="rc-value" id="rfmValueBox"><span id="rfmVal">--</span><small>%</small></div></div>
+    <div class="card result-card navy"><div class="rc-head"><div class="rc-name"><span class="dot navy"></span>海军法</div><div class="rc-tag" id="navyTag">等待</div></div><div class="rc-value" id="navyValueBox"><span id="navyVal">--</span><small>%</small></div></div>
   </section>
 
   <section class="card summary-bar">
-    <span class="item">平均体脂率 <b id="avgOut">--</b></span>
+    <span class="item">平均体脂 <b id="avgOut">--</b></span>
     <span class="sep"></span>
-    <span class="item">脂肪重量 <b id="fatOut">--</b></span>
+    <span class="item">脂肪 <b id="fatOut">--</b></span>
     <span class="sep"></span>
-    <span class="item">去脂体重 <b id="leanOut">--</b></span>
+    <span class="item">去脂 <b id="leanOut">--</b></span>
   </section>
 
   <section class="card weight-card" id="weightCard">
-    <div class="weight-header">
-      <h2>每日体重记录</h2>
-      <select class="weight-year-select" id="weightYear"></select>
-    </div>
+    <div class="weight-header"><h2>每日体重记录</h2><select class="weight-year-select" id="weightYear"></select></div>
     <div class="current-month-title" id="currentMonthTitle">--</div>
     <div class="month-tabs" id="monthTabs"></div>
     <table class="weight-table" id="weightTable">
@@ -525,195 +438,44 @@
   </section>
 
   <section class="card scale-card" id="scaleCard">
-    <div class="scale-header">
-      <span>身体指标参考标准</span>
-      <span id="scaleSub">BMI 为中国成人标准 · 体脂率为 ACE 成人参考</span>
-    </div>
+    <div class="scale-header"><span>身体指标参考标准</span><span id="scaleSub">BMI 为中国成人标准 · 体脂率为 ACE 成人参考</span></div>
 
     <div id="chenScaleRows" style="display:none">
-      <div class="scale-row">
-        <span class="scale-label">BMI</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:28.33%;background:#93c5fd"></div>
-            <div class="scale-seg" style="width:18.33%;background:#4ade80"></div>
-            <div class="scale-seg" style="width:13.33%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:40%;background:#f87171"></div>
-            <div class="marker bmi" id="markerChenBmi" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:28.33%">18.5</span>
-            <span class="tick" style="left:46.66%">24</span>
-            <span class="tick" style="left:60%">28</span>
-          </div>
-        </div>
-      </div>
+      <div class="scale-row"><span class="scale-label">BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerChenBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
       <div class="bmi-status-block" id="bmiStatusBlock">等待输入体重与身高</div>
-      <div class="scale-row" style="margin-top: 14px;">
-        <span class="scale-label">RFM</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:12.5%;background:#60a5fa"></div>
-            <div class="scale-seg" style="width:20%;background:#34d399"></div>
-            <div class="scale-seg" style="width:10%;background:#22c55e"></div>
-            <div class="scale-seg" style="width:17.5%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:40%;background:#ef4444"></div>
-            <div class="marker rfm" id="markerChenRfm" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:12.5%">5%</span>
-            <span class="tick" style="left:32.5%">13%</span>
-            <span class="tick" style="left:42.5%">17%</span>
-            <span class="tick" style="left:60%">24%</span>
-          </div>
-        </div>
-      </div>
-      <div class="scale-row">
-        <span class="scale-label">海军法</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:12.5%;background:#60a5fa"></div>
-            <div class="scale-seg" style="width:20%;background:#34d399"></div>
-            <div class="scale-seg" style="width:10%;background:#22c55e"></div>
-            <div class="scale-seg" style="width:17.5%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:40%;background:#ef4444"></div>
-            <div class="marker navy" id="markerChenNavy" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:12.5%">5%</span>
-            <span class="tick" style="left:32.5%">13%</span>
-            <span class="tick" style="left:42.5%">17%</span>
-            <span class="tick" style="left:60%">24%</span>
-          </div>
-        </div>
-      </div>
+      <div class="scale-row" style="margin-top: 14px;"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">海军法</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker navy" id="markerChenNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
     </div>
 
     <div id="otherScaleRows" style="display:none">
-      <div class="scale-row">
-        <span class="scale-label">男性 · BMI</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:28.33%;background:#93c5fd"></div>
-            <div class="scale-seg" style="width:18.33%;background:#4ade80"></div>
-            <div class="scale-seg" style="width:13.33%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:40%;background:#f87171"></div>
-            <div class="marker bmi" id="markerMaleBmi" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:28.33%">18.5</span>
-            <span class="tick" style="left:46.66%">24</span>
-            <span class="tick" style="left:60%">28</span>
-          </div>
-        </div>
-      </div>
-      <div class="scale-row">
-        <span class="scale-label">男性 · 体脂</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:12.5%;background:#60a5fa"></div>
-            <div class="scale-seg" style="width:20%;background:#34d399"></div>
-            <div class="scale-seg" style="width:10%;background:#22c55e"></div>
-            <div class="scale-seg" style="width:17.5%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:40%;background:#ef4444"></div>
-            <div class="marker rfm" id="markerMaleRfm" style="display:none"></div>
-            <div class="marker navy" id="markerMaleNavy" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:12.5%">5%</span>
-            <span class="tick" style="left:32.5%">13%</span>
-            <span class="tick" style="left:42.5%">17%</span>
-            <span class="tick" style="left:60%">24%</span>
-          </div>
-        </div>
-      </div>
-      <div class="scale-row">
-        <span class="scale-label">女性 · BMI</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:28.33%;background:#93c5fd"></div>
-            <div class="scale-seg" style="width:18.33%;background:#4ade80"></div>
-            <div class="scale-seg" style="width:13.33%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:40%;background:#f87171"></div>
-            <div class="marker bmi" id="markerFemaleBmi" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:28.33%">18.5</span>
-            <span class="tick" style="left:46.66%">24</span>
-            <span class="tick" style="left:60%">28</span>
-          </div>
-        </div>
-      </div>
-      <div class="scale-row">
-        <span class="scale-label">女性 · 体脂</span>
-        <div class="scale-track-wrap">
-          <div class="scale-track">
-            <div class="scale-seg" style="width:32.5%;background:#60a5fa"></div>
-            <div class="scale-seg" style="width:17.5%;background:#34d399"></div>
-            <div class="scale-seg" style="width:10%;background:#22c55e"></div>
-            <div class="scale-seg" style="width:17.5%;background:#fbbf24"></div>
-            <div class="scale-seg" style="width:22.5%;background:#ef4444"></div>
-            <div class="marker rfm" id="markerFemaleRfm" style="display:none"></div>
-            <div class="marker navy" id="markerFemaleNavy" style="display:none"></div>
-          </div>
-          <div class="scale-ticks">
-            <span class="tick" style="left:32.5%">13%</span>
-            <span class="tick" style="left:50%">20%</span>
-            <span class="tick" style="left:60%">24%</span>
-            <span class="tick" style="left:77.5%">31%</span>
-          </div>
-        </div>
-      </div>
+      <div class="scale-row"><span class="scale-label">男性 · BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerMaleBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">男性 · 体脂</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerMaleRfm" style="display:none"></div><div class="marker navy" id="markerMaleNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">女性 · BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerFemaleBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
+      <div class="scale-row"><span class="scale-label">女性 · 体脂</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:32.5%;background:#60a5fa"></div><div class="scale-seg" style="width:17.5%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:22.5%;background:#ef4444"></div><div class="marker rfm" id="markerFemaleRfm" style="display:none"></div><div class="marker navy" id="markerFemaleNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:50%">20%</span><span class="tick" style="left:60%">24%</span><span class="tick" style="left:77.5%">31%</span></div></div></div>
     </div>
   </section>
 
   <section class="card history-card">
-    <div class="hist-head">
-      <h2>历史记录 <span id="histCount" style="color:#94a3b8;font-weight:700;font-size:13px;"></span></h2>
-      <button class="btn-clear-all" id="clearHistBtn">清空全部</button>
-    </div>
+    <div class="hist-head"><h2>历史记录 <span id="histCount" style="color:#94a3b8;font-weight:700;font-size:13px;"></span></h2><button class="btn-clear-all" id="clearHistBtn" type="button">清空全部</button></div>
     <table class="hist-table" id="histTable" style="display:none">
-      <thead>
-        <tr>
-          <th>日期</th><th>时间</th><th>体重(kg)</th><th>腰围</th><th>BMI</th><th>RFM</th><th>海军法</th><th></th>
-        </tr>
-      </thead>
+      <thead><tr><th>日期</th><th>时间</th><th>体重(kg)</th><th>腰围</th><th>BMI</th><th>RFM</th><th>海军法</th><th></th></tr></thead>
       <tbody id="histBody"></tbody>
     </table>
     <div class="empty" id="histEmpty">还没有保存任何记录，填好上方数据后点击「保存记录」</div>
   </section>
 
-  <p class="disclaimer">
-    所有公式均为统计估算，存在个体误差；结果仅供趋势参考，不作为医学诊断依据。<br>
-    清空历史记录不会影响「每日体重记录」中的数据。
-  </p>
+  <p class="disclaimer">所有公式均为统计估算，存在个体误差；结果仅供趋势参考，不作为医学诊断依据。<br>清空历史记录不会影响「每日体重记录」中的数据。</p>
 </div>
 
-<div class="modal-overlay" id="confirmModal" style="display:none">
-  <div class="modal-box">
-    <p>确定要清空以往所有记录吗？<br>此操作不可撤销，且不会影响每日体重记录。</p>
-    <div class="modal-btns">
-      <button class="modal-ok" id="modalOk">确定</button>
-      <button class="modal-cancel" id="modalCancel">取消</button>
-    </div>
-  </div>
-</div>
+<div class="modal-overlay" id="confirmModal" style="display:none"><div class="modal-box"><p>确定要清空以往所有记录吗？<br>此操作不可撤销，且不会影响每日体重记录。</p><div class="modal-btns"><button class="modal-ok" id="modalOk" type="button">确定</button><button class="modal-cancel" id="modalCancel" type="button">取消</button></div></div></div>
 
-<div class="modal-overlay" id="lockModal" style="display:none">
-  <div class="modal-box modal-box-large">
-    <p id="lockModalText">以下项目未锁定，是否锁定后再保存？</p>
-    <div class="modal-btns">
-      <button class="modal-ok" id="lockOk" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 6px 18px -8px rgba(16,185,129,.7);">锁定并保存</button>
-      <button class="modal-cancel" id="lockCancel" style="background: linear-gradient(135deg, #64748b, #475569); box-shadow: 0 6px 18px -8px rgba(100,116,139,.7);">取消</button>
-    </div>
-  </div>
-</div>
+<div class="modal-overlay" id="lockModal" style="display:none"><div class="modal-box modal-box-large"><p id="lockModalText">以下项目未锁定，是否锁定后再保存？</p><div class="modal-btns"><button class="modal-ok" id="lockOk" type="button" style="background: linear-gradient(135deg, #10b981, #059669);">锁定并保存</button><button class="modal-cancel" id="lockCancel" type="button" style="background: linear-gradient(135deg, #64748b, #475569);">取消</button></div></div></div>
 
 <div class="toast" id="toast"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyApzRDw1B4NJdEC8itHG9Leq0iKAAPI_6c",
@@ -726,19 +488,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const docRef = doc(db, 'bodyfat_data', 'main');
 
-/* 启用离线持久化（可选，失败不阻塞） */
-try {
-  await enableIndexedDbPersistence(db);
-} catch (err) {
-  if (err.code === 'failed-precondition') {
-    console.warn('持久化失败：多个标签页同时打开');
-  } else if (err.code === 'unimplemented') {
-    console.warn('当前浏览器不支持离线持久化');
-  }
-}
-
-/* -------------------- 工具 -------------------- */
 const $ = id => document.getElementById(id);
 const pf = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
 const pad = n => String(n).padStart(2, '0');
@@ -752,32 +503,18 @@ function toast(msg, type) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
 }
 
-/* -------------------- 连接状态条 -------------------- */
 const connBar = $('connBar');
 function showConn(text, cls) {
   connBar.textContent = text;
   connBar.className = 'conn-bar show ' + (cls || '');
-  if (cls === 'ok') {
-    setTimeout(() => connBar.classList.remove('show'), 2200);
-  }
+  if (cls === 'ok') setTimeout(() => connBar.classList.remove('show'), 2200);
 }
 
-/* -------------------- 全局数据 -------------------- */
 let currentMode = null;
-let appData = {
-  history: [],
-  weightData: {},
-  chenProfile: {},
-  chenLastJin: '',
-  otherInputs: {}
-};
+let appData = { history: [], weightData: {}, chenProfile: {}, chenLastJin: '', otherInputs: {} };
 let dataReady = false;
 
-/* -------------------- Firestore 引用 -------------------- */
-const docRef = doc(db, 'bodyfat_data', 'main');
-
-/* 监听云端数据变化（实时同步核心） */
-onSnapshot(docRef, (snap) => {
+onSnapshot(docRef, snap => {
   if (snap.exists()) {
     const d = snap.data();
     appData = {
@@ -788,36 +525,27 @@ onSnapshot(docRef, (snap) => {
       otherInputs: (d.otherInputs && typeof d.otherInputs === 'object') ? d.otherInputs : {}
     };
   } else {
-    // 文档不存在（首次使用）：尝试从 localStorage 迁移，然后写入云端
     migrateFromLocal();
   }
   dataReady = true;
   if (currentMode) {
     renderHistory();
-    if (currentMode === 'chen') {
-      renderMonthTabs();
-      renderWeightTable();
-    }
+    if (currentMode === 'chen') { renderMonthTabs(); renderWeightTable(); }
     update();
   }
   showConn('✓ 云端数据已连接', 'ok');
-}, (err) => {
+}, err => {
   console.error('Firestore 连接失败:', err);
   showConn('✗ 云端连接失败，使用本地缓存', 'err');
-  // 降级：尝试从 localStorage 恢复
   fallbackToLocal();
   dataReady = true;
   if (currentMode) {
     renderHistory();
-    if (currentMode === 'chen') {
-      renderMonthTabs();
-      renderWeightTable();
-    }
+    if (currentMode === 'chen') { renderMonthTabs(); renderWeightTable(); }
     update();
   }
 });
 
-/* 首次使用：从 localStorage 迁移到 Firestore */
 function migrateFromLocal() {
   try {
     const local = {
@@ -831,20 +559,14 @@ function migrateFromLocal() {
                     (Object.keys(local.weightData).length > 0) ||
                     Object.keys(local.chenProfile).length > 0;
     if (hasData) {
-      setDoc(docRef, local, { merge: true }).then(() => {
-        toast('本地数据已上传到云端', 'success');
-      }).catch(e => console.warn('迁移失败', e));
+      setDoc(docRef, local, { merge: true }).then(() => toast('本地数据已上传到云端', 'success'));
     } else {
-      // 无旧数据，写入空文档
       setDoc(docRef, { history: [], weightData: {}, chenProfile: {}, chenLastJin: '', otherInputs: {} }, { merge: true });
     }
     appData = local;
-  } catch (e) {
-    console.warn('本地数据读取失败', e);
-  }
+  } catch (e) {}
 }
 
-/* Firestore 失败时降级读取本地 */
 function fallbackToLocal() {
   try {
     appData = {
@@ -857,9 +579,7 @@ function fallbackToLocal() {
   } catch (e) {}
 }
 
-/* 写入云端（Firestore 失败时也写本地保底） */
 async function saveCloud(partial) {
-  // 同时写 localStorage 保底
   try {
     if (partial.history !== undefined) localStorage.setItem('bf_calc_history_v11', JSON.stringify(partial.history));
     if (partial.weightData !== undefined) localStorage.setItem('bf_weight_daily_v7', JSON.stringify(partial.weightData));
@@ -867,7 +587,6 @@ async function saveCloud(partial) {
     if (partial.chenLastJin !== undefined) localStorage.setItem('bf_chen_last_jin', partial.chenLastJin);
     if (partial.otherInputs !== undefined) localStorage.setItem('bf_inputs_other_v5', JSON.stringify(partial.otherInputs));
   } catch (e) {}
-
   try {
     await setDoc(docRef, partial, { merge: true });
     showConn('✓ 已同步到云端', 'ok');
@@ -877,21 +596,20 @@ async function saveCloud(partial) {
   }
 }
 
-/* -------------------- 分类标准 -------------------- */
 const CATS = {
   male: [
-    { max: 5,   label: '必需脂肪', color: '#60a5fa' },
-    { max: 13,  label: '运动员级', color: '#34d399' },
-    { max: 17,  label: '健康',     color: '#22c55e' },
-    { max: 24,  label: '可接受',   color: '#fbbf24' },
-    { max: 1e9, label: '肥胖',     color: '#ef4444' }
+    { max: 5, label: '必需脂肪', color: '#60a5fa' },
+    { max: 13, label: '运动员级', color: '#34d399' },
+    { max: 17, label: '健康', color: '#22c55e' },
+    { max: 24, label: '可接受', color: '#fbbf24' },
+    { max: 1e9, label: '肥胖', color: '#ef4444' }
   ],
   female: [
-    { max: 13,  label: '必需脂肪', color: '#60a5fa' },
-    { max: 20,  label: '运动员级', color: '#34d399' },
-    { max: 24,  label: '健康',     color: '#22c55e' },
-    { max: 31,  label: '可接受',   color: '#fbbf24' },
-    { max: 1e9, label: '肥胖',     color: '#ef4444' }
+    { max: 13, label: '必需脂肪', color: '#60a5fa' },
+    { max: 20, label: '运动员级', color: '#34d399' },
+    { max: 24, label: '健康', color: '#22c55e' },
+    { max: 31, label: '可接受', color: '#fbbf24' },
+    { max: 1e9, label: '肥胖', color: '#ef4444' }
   ]
 };
 function classify(val, gender) {
@@ -902,16 +620,15 @@ function classify(val, gender) {
 
 const BMI_CATS = [
   { max: 18.5, label: '偏瘦', color: '#93c5fd', bg: '#dbeafe', text: '#1e40af' },
-  { max: 24,   label: '正常', color: '#22c55e', bg: '#dcfce7', text: '#166534' },
-  { max: 28,   label: '超重', color: '#fbbf24', bg: '#fef3c7', text: '#92400e' },
-  { max: 1e9,  label: '肥胖', color: '#ef4444', bg: '#fee2e2', text: '#991b1b' }
+  { max: 24, label: '正常', color: '#22c55e', bg: '#dcfce7', text: '#166534' },
+  { max: 28, label: '超重', color: '#fbbf24', bg: '#fef3c7', text: '#92400e' },
+  { max: 1e9, label: '肥胖', color: '#ef4444', bg: '#fee2e2', text: '#991b1b' }
 ];
 function classifyBmi(val) {
   for (const c of BMI_CATS) { if (val <= c.max) return c; }
   return BMI_CATS[BMI_CATS.length - 1];
 }
 
-/* -------------------- 公式 -------------------- */
 function calcRFM(gender, height, waist) {
   if (!(height > 0) || !(waist > 0)) return null;
   const ratio = height / waist;
@@ -925,16 +642,14 @@ function calcNavy(gender, height, waist, neck, hip) {
     if (d <= 0) return null;
     const denom = 1.0324 - 0.19077 * Math.log10(d) + 0.15456 * Math.log10(height);
     if (denom <= 0) return null;
-    const bf = 495 / denom - 450;
-    return Number.isFinite(bf) ? bf : null;
+    return Number.isFinite(495 / denom - 450) ? 495 / denom - 450 : null;
   } else {
     if (!(hip > 0)) return null;
     const d = waist + hip - neck;
     if (d <= 0) return null;
     const denom = 1.29579 - 0.35004 * Math.log10(d) + 0.22100 * Math.log10(height);
     if (denom <= 0) return null;
-    const bf = 495 / denom - 450;
-    return Number.isFinite(bf) ? bf : null;
+    return Number.isFinite(495 / denom - 450) ? 495 / denom - 450 : null;
   }
 }
 function calcBMI(kg, height) {
@@ -943,24 +658,20 @@ function calcBMI(kg, height) {
   return kg / (m * m);
 }
 
-/* -------------------- 标记 -------------------- */
-const SCALE_MAX = 40;
 function setMarker(el, val, min, max) {
   if (!el) return;
   if (val === null || !Number.isFinite(val)) { el.style.display = 'none'; return; }
   el.style.display = 'block';
   const lo = (min !== undefined) ? min : 0;
-  const hi = (max !== undefined) ? max : SCALE_MAX;
-  const pct = Math.max(0, Math.min(100, ((val - lo) / (hi - lo)) * 100));
-  el.style.left = pct + '%';
+  const hi = (max !== undefined) ? max : 40;
+  el.style.left = Math.max(0, Math.min(100, ((val - lo) / (hi - lo)) * 100)) + '%';
 }
 
-/* -------------------- 渲染 -------------------- */
 function renderBmi(val) {
   const valEl = $('bmiVal'), tagEl = $('bmiTag'), boxEl = $('bmiValueBox'), statusEl = $('bmiStatusBlock');
   if (val === null || !Number.isFinite(val)) {
     valEl.textContent = '--';
-    tagEl.textContent = '等待输入'; tagEl.style.background = '#f1f5f9'; tagEl.style.color = '#94a3b8';
+    tagEl.textContent = '等待'; tagEl.style.background = '#f1f5f9'; tagEl.style.color = '#94a3b8';
     statusEl.textContent = '等待输入体重与身高';
     statusEl.style.background = '#f1f5f9'; statusEl.style.color = '#94a3b8';
     return;
@@ -977,7 +688,7 @@ function renderBmi(val) {
 function renderOne(prefix, val, gender, emptyMsg) {
   const valEl = $(prefix + 'Val'), tagEl = $(prefix + 'Tag'), boxEl = $(prefix + 'ValueBox');
   if (val === null || !Number.isFinite(val)) {
-    valEl.textContent = '--'; tagEl.textContent = emptyMsg || '等待输入';
+    valEl.textContent = '--'; tagEl.textContent = emptyMsg || '等待';
     tagEl.style.background = '#f1f5f9'; tagEl.style.color = '#94a3b8'; return;
   }
   const oldText = valEl.textContent;
@@ -987,9 +698,7 @@ function renderOne(prefix, val, gender, emptyMsg) {
   tagEl.textContent = cat.label; tagEl.style.background = cat.color + '1f'; tagEl.style.color = cat.color;
 }
 
-/* -------------------- 日期选择器 -------------------- */
 let dpYear, dpMonth, dpSelectedDay, userPickedDate = false;
-
 function setDateValue(val) {
   $('date').value = val || '';
   if (val) { const p = val.split('-'); $('dateDisplay').textContent = p[0] + '-' + p[1] + '-' + p[2]; }
@@ -1000,8 +709,7 @@ function openDatePicker() {
   const val = $('date').value;
   if (val) { const p = val.split('-').map(Number); dpYear = p[0]; dpMonth = p[1]; dpSelectedDay = p[2]; }
   else { const n = new Date(); dpYear = n.getFullYear(); dpMonth = n.getMonth() + 1; dpSelectedDay = n.getDate(); }
-  renderDatePicker();
-  $('datePickerModal').style.display = 'flex'; $('dateTrigger').classList.add('open');
+  renderDatePicker(); $('datePickerModal').style.display = 'flex'; $('dateTrigger').classList.add('open');
 }
 function closeDatePicker() { $('datePickerModal').style.display = 'none'; $('dateTrigger').classList.remove('open'); }
 function renderDatePicker() {
@@ -1023,7 +731,6 @@ function shiftMonth(delta) { dpMonth += delta; if (dpMonth > 12) { dpMonth = 1; 
 function shiftYear(delta) { dpYear += delta; renderDatePicker(); }
 
 $('dateTrigger').addEventListener('click', openDatePicker);
-$('dateTrigger').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDatePicker(); } });
 $('dpPrevYear').addEventListener('click', () => shiftYear(-1));
 $('dpNextYear').addEventListener('click', () => shiftYear(1));
 $('dpPrevMonth').addEventListener('click', () => shiftMonth(-1));
@@ -1038,9 +745,7 @@ $('dpDays').addEventListener('click', e => {
   userPickedDate = true; closeDatePicker(); update();
 });
 $('datePickerModal').addEventListener('click', e => { if (e.target === $('datePickerModal')) closeDatePicker(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('datePickerModal').style.display === 'flex') closeDatePicker(); });
 
-/* 日期自动跟随系统时间 */
 let lastAutoToday = getTodayStr();
 setInterval(() => {
   if (userPickedDate) return;
@@ -1048,7 +753,6 @@ setInterval(() => {
   if (today !== lastAutoToday) { lastAutoToday = today; setDateValue(today); update(); }
 }, 20000);
 
-/* -------------------- 陈柳江资料 -------------------- */
 function loadChenProfile() { return appData.chenProfile || {}; }
 function saveChenProfileFromInputs() {
   appData.chenProfile = {
@@ -1058,7 +762,6 @@ function saveChenProfileFromInputs() {
   saveCloud({ chenProfile: appData.chenProfile });
 }
 
-/* -------------------- 锁定 -------------------- */
 const LOCKABLE = ['height', 'age', 'waist', 'neck'];
 const fieldLocked = { height: false, age: false, waist: false, neck: false };
 const FIELD_NAMES = { height: '身高', age: '年龄', waist: '腰围', neck: '颈围' };
@@ -1098,7 +801,6 @@ function getUnlockedFields() {
   return unlocked;
 }
 
-/* -------------------- 字段排序 -------------------- */
 const FIELD_EL = {
   gender: () => $('genderField'), date: () => $('dateField'),
   height: () => $('heightField'), weightJin: () => $('weightJinField'),
@@ -1114,7 +816,6 @@ function reorderInputs(mode) {
   order.forEach(k => { const el = FIELD_EL[k](); if (el) grid.appendChild(el); });
 }
 
-/* -------------------- 模式切换 -------------------- */
 function applyChenMode() {
   currentMode = 'chen';
   $('genderLabel').textContent = '姓名';
@@ -1122,7 +823,8 @@ function applyChenMode() {
   $('nameDisplay').style.display = 'flex';
   const maleRadio = document.querySelector('input[name="gender"][value="male"]');
   if (maleRadio) maleRadio.checked = true;
-  $('weightKg').classList.add('always-locked'); $('weightKg').setAttribute('readonly', 'readonly');
+  $('weightKg').classList.add('always-locked');
+  $('weightKg').setAttribute('readonly', 'readonly');
   reorderInputs('chen');
   $('heightField').classList.remove('field-big');
 
@@ -1154,7 +856,8 @@ function applyOtherMode() {
   $('genderLabel').textContent = '性别';
   $('genderSeg').style.display = 'flex';
   $('nameDisplay').style.display = 'none';
-  $('weightKg').classList.remove('always-locked'); $('weightKg').removeAttribute('readonly');
+  $('weightKg').classList.remove('always-locked');
+  $('weightKg').removeAttribute('readonly');
   LOCKABLE.forEach(fieldId => {
     setFieldLock(fieldId, false);
     const btn = $(btnIdFor(fieldId)); if (btn) btn.style.display = 'none';
@@ -1166,7 +869,6 @@ function applyOtherMode() {
   $('otherScaleRows').style.display = '';
   ['height', 'age', 'waist', 'neck', 'weightKg', 'weightJin', 'hip'].forEach(id => { $(id).value = ''; });
 
-  // 恢复上次其他模式的输入
   const oi = appData.otherInputs || {};
   if (oi.gender) { const el = document.querySelector('input[name="gender"][value="' + oi.gender + '"]'); if (el) el.checked = true; }
   ['age', 'height', 'weightKg', 'weightJin', 'waist', 'neck', 'hip'].forEach(k => {
@@ -1175,19 +877,20 @@ function applyOtherMode() {
 }
 
 $('chooseChen').addEventListener('click', () => {
-  $('welcomeModal').style.display = 'none'; $('mainWrap').style.display = 'block';
+  $('welcomeModal').style.display = 'none';
+  $('mainWrap').style.display = 'block';
   $('headerSub').textContent = '陈柳江 · 常用模式';
   applyChenMode();
   initDateToday(); update();
 });
 $('chooseOther').addEventListener('click', () => {
-  $('welcomeModal').style.display = 'none'; $('mainWrap').style.display = 'block';
+  $('welcomeModal').style.display = 'none';
+  $('mainWrap').style.display = 'block';
   $('headerSub').textContent = 'RFM 公式 · 美国海军围度法';
   applyOtherMode();
   initDateToday(); update();
 });
 
-/* -------------------- 其他模式输入保存 -------------------- */
 function saveOtherInputs() {
   if (currentMode !== 'other') return;
   const genderEl = document.querySelector('input[name="gender"]:checked');
@@ -1200,7 +903,6 @@ function saveOtherInputs() {
   saveCloud({ otherInputs: appData.otherInputs });
 }
 
-/* -------------------- 主更新 -------------------- */
 function update() {
   if (!currentMode) return;
   const genderEl = document.querySelector('input[name="gender"]:checked');
@@ -1215,7 +917,7 @@ function update() {
   const navyVal = calcNavy(gender, height, waist, neck, hip);
   const bmiVal = calcBMI(kg, height);
 
-  let navyEmpty = '等待输入';
+  let navyEmpty = '等待';
   if (height > 0 && waist > 0 && neck > 0) {
     if (waist <= neck) navyEmpty = '腰围需>颈围';
     else if (gender === 'female' && !(hip > 0)) navyEmpty = '请填臀围';
@@ -1223,7 +925,7 @@ function update() {
   } else if (height > 0 && waist > 0 && !(neck > 0)) navyEmpty = '请填颈围';
 
   renderBmi(bmiVal);
-  renderOne('rfm', rfmVal, gender, '等待输入');
+  renderOne('rfm', rfmVal, gender, '等待');
   renderOne('navy', navyVal, gender, navyEmpty);
 
   const isMale = (gender === 'male');
@@ -1258,7 +960,6 @@ function update() {
   }
 }
 
-/* -------------------- 体重双单位 -------------------- */
 let syncing = false;
 $('weightKg').addEventListener('input', function () {
   if (syncing || this.hasAttribute('readonly')) return;
@@ -1283,7 +984,6 @@ $('weightJin').addEventListener('input', function () {
 });
 document.querySelectorAll('input[name="gender"]').forEach(r => r.addEventListener('change', update));
 
-/* -------------------- 每日体重记录 -------------------- */
 const nowDate = new Date();
 const curY = nowDate.getFullYear();
 let weightYear = (curY >= 2026 && curY <= 2036) ? curY : 2026;
@@ -1326,6 +1026,7 @@ function renderMonthTabs() {
   wrap.innerHTML = '';
   for (let m = 1; m <= 12; m++) {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'month-tab' + (m === weightMonth ? ' active' : '');
     btn.textContent = m + '月';
     const key = weightYear + '-' + pad(m);
@@ -1338,6 +1039,7 @@ function renderMonthTabs() {
   $('currentMonthTitle').textContent = weightYear + '年' + weightMonth + '月';
 }
 
+// 【关键修改】行优先排列：1、2、3 / 4、5、6 / ...
 function renderWeightTable() {
   const year = weightYear, month = weightMonth;
   const days = daysInMonth(year, month);
@@ -1346,13 +1048,14 @@ function renderWeightTable() {
   const monthData = data[monthKey] || {};
   const today = new Date();
   const tY = today.getFullYear(), tM = today.getMonth() + 1, tD = today.getDate();
-  const perCol = Math.ceil(days / 3);
+
+  const totalRows = Math.ceil(days / 3);
 
   let html = '';
-  for (let r = 0; r < perCol; r++) {
+  for (let r = 0; r < totalRows; r++) {
     html += '<tr>';
     for (let c = 0; c < 3; c++) {
-      const day = c * perCol + r + 1;
+      const day = r * 3 + c + 1;
       if (day > days) { html += '<td></td><td></td><td></td>'; continue; }
       const entry = normalizeEntry(monthData[day]);
       const jinVal = entry.jin != null ? entry.jin.toFixed(1) : '';
@@ -1428,7 +1131,6 @@ function updateWeightStats() {
   $('weightStats').innerHTML = html;
 }
 
-/* -------------------- 历史记录 -------------------- */
 function renderHistory(newRowId) {
   const list = appData.history || [];
   const tbody = $('histBody'), table = $('histTable'), empty = $('histEmpty'), countEl = $('histCount');
@@ -1455,12 +1157,11 @@ function renderHistory(newRowId) {
       '<td class="num">' + bmiStr + '</td>' +
       '<td class="num" style="color:' + rfColor + '">' + rfStr + '</td>' +
       '<td class="num" style="color:' + nvColor + '">' + nvStr + '</td>' +
-      '<td><button class="del" data-id="' + r.id + '">删除</button></td>' +
+      '<td><button class="del" data-id="' + r.id + '" type="button">删除</button></td>' +
     '</tr>';
   }).join('');
 }
 
-/* -------------------- 保存记录 -------------------- */
 function markError(id) {
   const el = $(id); if (!el) return;
   el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 1800);
@@ -1520,7 +1221,6 @@ function doSave() {
     }
   }
 
-  // 一次性写入云端
   saveCloud({
     history: appData.history,
     weightData: appData.weightData,
@@ -1529,7 +1229,6 @@ function doSave() {
   });
 
   renderHistory(rec.id);
-  setTimeout(() => { $('histTable').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
   let msg = '已保存到历史记录';
   if (currentMode === 'chen' && jin > 0) msg = '已保存 · 体重/腰围已同步';
   else if (navy === null) msg = '已保存（仅RFM有效）';
@@ -1560,7 +1259,6 @@ $('lockOk').addEventListener('click', () => {
 });
 $('lockCancel').addEventListener('click', () => { $('lockModal').style.display = 'none'; });
 
-/* 删除/清空 */
 $('histBody').addEventListener('click', e => {
   const btn = e.target.closest('.del'); if (!btn) return;
   const id = btn.getAttribute('data-id');
@@ -1584,14 +1282,12 @@ $('modalOk').addEventListener('click', () => {
 $('modalCancel').addEventListener('click', () => { $('confirmModal').style.display = 'none'; });
 $('confirmModal').addEventListener('click', e => { if (e.target === $('confirmModal')) $('confirmModal').style.display = 'none'; });
 
-/* 重置 */
 $('resetBtn').addEventListener('click', () => {
   const ids = (currentMode === 'chen') ? ['weightJin', 'weightKg'] : ['height', 'weightKg', 'weightJin', 'age', 'waist', 'neck', 'hip'];
   ids.forEach(id => { const el = $(id); if (el) { el.value = ''; el.classList.remove('error'); } });
   update(); toast('已清空输入');
 });
 
-/* 初始化日期 */
 function initDateToday() {
   const today = getTodayStr();
   if (currentMode === 'other') {
@@ -1605,8 +1301,6 @@ function initDateToday() {
   renderHistory(); update();
 }
 
-/* -------------------- 启动 -------------------- */
-// 等待 Firestore 第一次响应后显示欢迎弹窗
 function tryShowWelcome() {
   if (dataReady) {
     $('welcomeModal').style.display = 'flex';
@@ -1615,7 +1309,6 @@ function tryShowWelcome() {
   }
 }
 tryShowWelcome();
-
 </script>
 </body>
 </html>
