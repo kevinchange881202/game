@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>体脂率计算器</title>
+<title>体重体脂率记录器</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -56,7 +56,7 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .date-display{font-size:12px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .date-icon{flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#eff6ff;color:#2563eb}
 .date-icon svg{width:14px;height:14px}
-.name-display{height:52px;display:flex;align-items:center;padding:0 14px;font-size:36px;font-weight:900;color:#1e40af;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:12px;border:2px solid #bfdbfe;letter-spacing:2px}
+.name-display{height:52px;display:flex;align-items:center;padding:0 14px;font-size:30px;font-weight:900;color:#1e40af;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:12px;border:2px solid #bfdbfe;letter-spacing:2px}
 .lock-wrap{position:relative}
 .lock-wrap input{padding-right:34px!important}
 .lock-wrap input.locked-input{background:#f1f5f9!important;color:#94a3b8!important;cursor:not-allowed!important;border-color:#e2e8f0!important}
@@ -92,16 +92,40 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .summary-bar .item{display:inline-flex;align-items:baseline;gap:6px;font-size:13px;font-weight:700;color:#64748b}
 .summary-bar .item b{color:#0f172a;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
 .summary-bar .sep{width:1px;height:16px;background:#e8eef6}
+/* ============ 每日体重记录（1.5倍） ============ */
 .weight-card{padding:14px}
-.weight-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.weight-header h2{margin:0;font-size:17px;font-weight:900;color:#0f172a}
-.weight-year-select{padding:8px 28px 8px 12px;border:1.5px solid #e4eaf2;border-radius:10px;font-size:13px;font-weight:900;font-family:inherit;color:#0f172a;background:#fff;cursor:pointer;-webkit-appearance:none;transition:background .25s,border-color .25s,color .25s;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 8px center;background-size:12px}
-.weight-year-select.is-current{background:#dcfce7;border-color:#86efac;color:#166534;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23166534' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")}
-.current-month-title{font-size:15px;font-weight:900;color:#0f172a;margin-bottom:8px;font-variant-numeric:tabular-nums}
-.month-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-.month-tab{border:none;background:#f1f5f9;color:#64748b;font-size:12px;font-weight:900;font-family:inherit;padding:6px 10px;border-radius:8px;cursor:pointer;position:relative}
+.weight-header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px;flex-wrap:wrap}
+.weight-header h2{margin:0;font-size:25.5px;font-weight:900;color:#0f172a;line-height:1.1}
+.weight-year-select{
+  padding:12px 42px 12px 18px;
+  border:1.5px solid #e4eaf2;
+  border-radius:15px;
+  font-size:19.5px;
+  font-weight:900;
+  font-family:inherit;
+  color:#0f172a;
+  cursor:pointer;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+  transition:background-color .25s,border-color .25s,color .25s;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  background-size:18px;
+}
+.weight-year-select.is-current{
+  background-color:#dcfce7;
+  border-color:#86efac;
+  color:#166534;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23166534' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+.current-month-title{font-size:22.5px;font-weight:900;color:#0f172a;margin-bottom:12px;font-variant-numeric:tabular-nums}
+.month-tabs{display:flex;flex-wrap:wrap;gap:7.5px;margin-bottom:15px}
+.month-tab{border:none;background:#f1f5f9;color:#64748b;font-size:18px;font-weight:900;font-family:inherit;padding:9px 15px;border-radius:12px;cursor:pointer;position:relative}
 .month-tab.active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
-.month-tab.has-data::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:#22c55e;margin-left:4px;vertical-align:middle}
+.month-tab.has-data::after{content:'';display:inline-block;width:7.5px;height:7.5px;border-radius:50%;background:#22c55e;margin-left:6px;vertical-align:middle}
 .month-tab.active.has-data::after{background:#fff}
 .weight-table{width:100%;border-collapse:collapse;table-layout:fixed}
 .weight-table tbody{display:block}
@@ -115,42 +139,44 @@ body{min-height:100vh;background:#0f172a;font-family:-apple-system,BlinkMacSyste
 .w-input.filled{background:#eff6ff;color:#1d4ed8}
 .w-input.filled-waist{background:#eff6ff;color:#16a34a}
 .w-input::-webkit-outer-spin-button,.w-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.weight-stats{margin-top:10px;padding-top:10px;border-top:1px dashed #eef2f7;display:flex;flex-wrap:wrap;gap:5px 14px;font-size:11.5px;color:#94a3b8;font-weight:700}
-.weight-stats b{color:#0f172a;font-weight:900;font-size:13px;margin-left:3px}
-.scale-card{padding:12px 14px 14px}
-.scale-header{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.scale-header span:first-child{font-size:12px;font-weight:900;color:#334155}
-.scale-header span:last-child{font-size:10px;color:#b0b9c5;font-weight:700}
-.scale-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+.weight-stats{margin-top:15px;padding-top:15px;border-top:1px dashed #eef2f7;display:flex;flex-wrap:wrap;gap:7.5px 21px;font-size:17.25px;color:#94a3b8;font-weight:700}
+.weight-stats b{color:#0f172a;font-weight:900;font-size:19.5px;margin-left:4.5px}
+/* ============ 参考标准（1.5倍） ============ */
+.scale-card{padding:18px 21px 21px}
+.scale-header{display:flex;align-items:baseline;gap:12px;margin-bottom:15px;flex-wrap:wrap}
+.scale-header span:first-child{font-size:18px;font-weight:900;color:#334155}
+.scale-header span:last-child{font-size:15px;color:#b0b9c5;font-weight:700}
+.scale-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:15px}
 .scale-row:last-child{margin-bottom:0}
-.scale-label{width:66px;flex-shrink:0;font-size:10.5px;font-weight:900;color:#64748b;text-align:right;white-space:nowrap;padding-top:1px}
-.scale-track-wrap{flex:1;position:relative;padding:6px 0 12px}
-.scale-track{position:relative;display:flex;height:12px;border-radius:5px}
+.scale-label{width:99px;flex-shrink:0;font-size:15.75px;font-weight:900;color:#64748b;text-align:right;white-space:nowrap;padding-top:1.5px}
+.scale-track-wrap{flex:1;position:relative;padding:9px 0 18px}
+.scale-track{position:relative;display:flex;height:18px;border-radius:7.5px}
 .scale-seg{height:100%}
-.scale-seg:first-child{border-radius:5px 0 0 5px}
-.scale-seg:last-child{border-radius:0 5px 5px 0}
-.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:12px;pointer-events:none}
-.tick{position:absolute;transform:translateX(-50%);font-size:8.5px;font-weight:800;color:#b8c2ce;font-variant-numeric:tabular-nums}
-.marker{position:absolute;top:50%;width:6px;height:22px;border-radius:4px;border:2px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
+.scale-seg:first-child{border-radius:7.5px 0 0 7.5px}
+.scale-seg:last-child{border-radius:0 7.5px 7.5px 0}
+.scale-ticks{position:absolute;left:0;right:0;bottom:0;height:18px;pointer-events:none}
+.tick{position:absolute;transform:translateX(-50%);font-size:12.75px;font-weight:800;color:#b8c2ce;font-variant-numeric:tabular-nums}
+.marker{position:absolute;top:50%;width:9px;height:33px;border-radius:6px;border:3px solid #fff;transform:translate(-50%,-50%);transition:left .32s cubic-bezier(.4,0,.2,1);z-index:3;pointer-events:none}
 .marker.bmi{background:#14b8a6}
 .marker.rfm{background:#6366f1}
 .marker.navy{background:#0ea5e9}
-.bmi-status-block{margin-top:6px;padding:8px 12px;border-radius:10px;font-size:11.5px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
-.history-card{padding:14px;overflow-x:auto}
-.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
-.hist-head h2{margin:0;font-size:13px;font-weight:900;color:#334155}
-.btn-clear-all{border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:12px;font-weight:900;font-family:inherit;padding:8px 14px;border-radius:9px;cursor:pointer;box-shadow:0 4px 12px -6px rgba(239,68,68,.7)}
-.hist-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:560px}
-.hist-table th,.hist-table td{padding:7px 4px;text-align:left;border-bottom:1px solid #f1f5f9}
-.hist-table th{font-size:9.5px;font-weight:900;color:#b0b9c5;text-transform:uppercase;padding-top:0;padding-bottom:6px}
+.bmi-status-block{margin-top:9px;padding:12px 18px;border-radius:15px;font-size:17.25px;font-weight:900;text-align:center;background:#f1f5f9;color:#94a3b8}
+/* ============ 历史记录（1.5倍） ============ */
+.history-card{padding:21px;overflow-x:auto}
+.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;gap:15px}
+.hist-head h2{margin:0;font-size:19.5px;font-weight:900;color:#334155}
+.btn-clear-all{border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:18px;font-weight:900;font-family:inherit;padding:12px 21px;border-radius:13.5px;cursor:pointer;box-shadow:0 6px 18px -9px rgba(239,68,68,.7)}
+.hist-table{width:100%;border-collapse:collapse;font-size:17.25px;min-width:840px}
+.hist-table th,.hist-table td{padding:10.5px 6px;text-align:left;border-bottom:1px solid #f1f5f9}
+.hist-table th{font-size:14.25px;font-weight:900;color:#b0b9c5;text-transform:uppercase;padding-top:0;padding-bottom:9px}
 .hist-table tbody tr:last-child td{border-bottom:none}
 .hist-table td.num{font-variant-numeric:tabular-nums;font-weight:800;color:#1e293b}
 .hist-table td.time-cell{color:#2563eb;font-weight:900}
 @keyframes flashNew{0%{background:rgba(34,197,94,.25)}100%{background:transparent}}
 tr.new-row{animation:flashNew 1.6s ease-out}
-.del{border:none;background:transparent;color:#cbd5e1;font-size:11px;font-family:inherit;font-weight:800;cursor:pointer;padding:4px 6px;border-radius:6px}
+.del{border:none;background:transparent;color:#cbd5e1;font-size:16.5px;font-family:inherit;font-weight:800;cursor:pointer;padding:6px 9px;border-radius:9px}
 .del:hover{background:#fee2e2;color:#dc2626}
-.empty{color:#c2ccda;font-size:11.5px;font-weight:600;text-align:center;padding:16px 0}
+.empty{color:#c2ccda;font-size:17.25px;font-weight:600;text-align:center;padding:24px 0}
 .disclaimer{margin-top:16px;font-size:10px;color:#a8b3c1;line-height:1.7;text-align:center}
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:3600;padding:20px}
 .modal-box{background:#fff;border-radius:18px;padding:22px;max-width:340px;width:100%;box-shadow:0 24px 60px -12px rgba(15,23,42,.6)}
@@ -190,7 +216,7 @@ tr.new-row{animation:flashNew 1.6s ease-out}
 
 <div class="welcome-overlay" id="welcomeModal">
   <div class="welcome-box">
-    <h2>欢迎使用体脂率计算器</h2>
+    <h2>欢迎使用体重体脂率记录器</h2>
     <p class="welcome-sub">请选择使用者身份</p>
     <div class="welcome-btns">
       <button class="welcome-btn chen" id="chooseChen" type="button">
@@ -223,7 +249,7 @@ tr.new-row{animation:flashNew 1.6s ease-out}
 
 <div class="wrap" id="mainWrap" style="display:none">
   <header class="header">
-    <h1>体脂率<span>计算器</span></h1>
+    <h1>体重体脂率<span>记录器</span></h1>
     <p id="headerSub">RFM 公式 · 美国海军围度法</p>
   </header>
   <section class="card input-card">
@@ -284,7 +310,7 @@ tr.new-row{animation:flashNew 1.6s ease-out}
     <div id="chenScaleRows" style="display:none">
       <div class="scale-row"><span class="scale-label">BMI</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:28.33%;background:#93c5fd"></div><div class="scale-seg" style="width:18.33%;background:#4ade80"></div><div class="scale-seg" style="width:13.33%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#f87171"></div><div class="marker bmi" id="markerChenBmi" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:28.33%">18.5</span><span class="tick" style="left:46.66%">24</span><span class="tick" style="left:60%">28</span></div></div></div>
       <div class="bmi-status-block" id="bmiStatusBlock">等待输入体重与身高</div>
-      <div class="scale-row" style="margin-top:8px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
+      <div class="scale-row" style="margin-top:12px"><span class="scale-label">RFM</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker rfm" id="markerChenRfm" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
       <div class="scale-row"><span class="scale-label">海军法</span><div class="scale-track-wrap"><div class="scale-track"><div class="scale-seg" style="width:12.5%;background:#60a5fa"></div><div class="scale-seg" style="width:20%;background:#34d399"></div><div class="scale-seg" style="width:10%;background:#22c55e"></div><div class="scale-seg" style="width:17.5%;background:#fbbf24"></div><div class="scale-seg" style="width:40%;background:#ef4444"></div><div class="marker navy" id="markerChenNavy" style="display:none"></div></div><div class="scale-ticks"><span class="tick" style="left:12.5%">5%</span><span class="tick" style="left:32.5%">13%</span><span class="tick" style="left:42.5%">17%</span><span class="tick" style="left:60%">24%</span></div></div></div>
     </div>
 
@@ -297,7 +323,7 @@ tr.new-row{animation:flashNew 1.6s ease-out}
   </section>
 
   <section class="card history-card">
-    <div class="hist-head"><h2>历史记录 <span id="histCount" style="color:#94a3b8;font-weight:700;font-size:11px"></span></h2><button class="btn-clear-all" id="clearHistBtn" type="button">清空全部</button></div>
+    <div class="hist-head"><h2>历史记录 <span id="histCount" style="color:#94a3b8;font-weight:700;font-size:16.5px"></span></h2><button class="btn-clear-all" id="clearHistBtn" type="button">清空全部</button></div>
     <table class="hist-table" id="histTable" style="display:none"><thead><tr><th>日期</th><th>时间</th><th>体重(斤)</th><th>腰围</th><th>BMI</th><th>RFM</th><th>海军法</th><th></th></tr></thead><tbody id="histBody"></tbody></table>
     <div class="empty" id="histEmpty">还没有保存任何记录</div>
   </section>
@@ -788,7 +814,6 @@ function normalizeEntry(raw){
 function initYearSelect(){
   var sel = $('weightYear'); if (!sel) return;
   sel.innerHTML = '';
-  var realCurY = new Date().getFullYear();
   for (var y=2026; y<=2036; y++){
     var opt = document.createElement('option');
     opt.value = y;
@@ -796,7 +821,6 @@ function initYearSelect(){
     if (y === weightYear) opt.selected = true;
     sel.appendChild(opt);
   }
-  // 更新选中颜色：如果选中的年份是当前年份，显示绿色
   updateYearSelectStyle();
   if (!sel._bound){
     sel._bound = true;
@@ -1093,7 +1117,6 @@ function initDateToday(){
 loadLocal();
 $('welcomeModal').style.display = 'flex';
 
-/* 年份选择器：定期检查是否需要更新绿色样式（防止跨年） */
 setInterval(function(){
   if (currentMode === 'chen') updateYearSelectStyle();
 }, 60000);
